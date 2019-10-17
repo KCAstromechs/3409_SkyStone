@@ -1,0 +1,180 @@
+package org.firstinspires.ftc.teamcode;
+
+import com.qualcomm.robotcore.eventloop.opmode.OpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.Servo;
+
+@TeleOp(name="teleop m1")
+public class teleopM1 extends OpMode {
+
+    //init vars
+    private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, lift, flip, intakeRight, intakeLeft;
+    private Servo foundRight, foundLeft, mainFlop, subFlop, release;
+    private int turbo = 3;
+    private int flopPos = 0;
+    private boolean y, yLast, a2, a2Last, b2, b2Last, y2Last, x2Last, r12, r12Last = false;
+
+
+    @Override
+    public void init() {
+        frontRight = hardwareMap.dcMotor.get("frontRight");
+        frontLeft = hardwareMap.dcMotor.get("frontLeft");
+        backRight = hardwareMap.dcMotor.get("backRight");
+        backLeft = hardwareMap.dcMotor.get("backLeft");
+        lift = hardwareMap.dcMotor.get("lift");
+        flip = hardwareMap.dcMotor.get("flip");
+        intakeRight = hardwareMap.dcMotor.get("intakeRight");
+        intakeLeft = hardwareMap.dcMotor.get("intakeLeft");
+
+        foundLeft = hardwareMap.servo.get("foundationLeft");
+        foundRight = hardwareMap.servo.get("foundationRight");
+        mainFlop = hardwareMap.servo.get("mainFlop");
+        subFlop = hardwareMap.servo.get("subFlop");
+        release = hardwareMap.servo.get("release");
+
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
+
+        frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+        release.setPosition(0);
+        foundRight.setPosition(0.75);
+        foundLeft.setPosition(0.25);
+        mainFlop.setPosition(0.7);
+        subFlop.setPosition(0.55);
+    }
+
+    @Override
+    public void loop() {
+        turbo = 3;
+
+        left = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : gamepad1.left_stick_y;
+        right = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : gamepad1.right_stick_y;
+        leftT = (Math.abs(gamepad1.left_trigger) < 0.05) ? 0 : gamepad1.left_trigger;
+        rightT = (Math.abs(gamepad1.right_trigger) < 0.05) ? 0 : gamepad1.right_trigger;
+
+        frontLeftPower = left - rightT + leftT;
+        backLeftPower = left + rightT - leftT;
+        frontRightPower = right + rightT - leftT;
+        backRightPower = right - rightT + leftT;
+
+        reducePowers(Math.max(frontLeftPower, Math.max(backLeftPower, Math.max(frontRightPower, backRightPower))));
+
+        if (gamepad1.right_bumper || gamepad1.left_bumper) turbo ++;
+
+        frontRight.setPower((frontRightPower*turbo)/4);
+        backRight.setPower((backRightPower*turbo)/4);
+        frontLeft.setPower((frontLeftPower*turbo)/4);
+        backLeft.setPower((backLeftPower*turbo)/4);
+
+        if(gamepad1.y && !yLast){
+            if(y){
+                foundRight.setPosition(0.75);
+                foundLeft.setPosition(0.25);
+                y = false;
+            } else {
+                foundRight.setPosition(0.1);
+                foundLeft.setPosition(0.75);
+                y = true;
+            }
+            yLast = true;
+        } else if (!gamepad1.y && yLast) {
+            yLast = false;
+        }
+
+        if(gamepad2.a && !a2Last){
+            if(a2){
+                intakeLeft.setPower(0);
+                intakeRight.setPower(0);
+                a2 = false;
+            } else {
+                intakeLeft.setPower(1);
+                intakeRight.setPower(1);
+                a2 = true;
+            }
+            a2Last = true;
+        } else if (!gamepad2.a && a2Last) {
+            a2Last = false;
+        }
+
+        if(gamepad2.b && !b2Last){
+            if(b2){
+                release.setPosition(0);
+                b2 = false;
+            } else {
+                release.setPosition(1);
+                b2 = true;
+            }
+            b2Last = true;
+        } else if (!gamepad2.b && b2Last) {
+            b2Last = false;
+        }
+
+        flip.setPower(gamepad2.right_stick_y);
+
+        lift.setPower(gamepad2.left_stick_y);
+
+        if(gamepad2.y && !y2Last){
+            if(flopPos != 2){
+                flopPos ++;
+            }
+            y2Last = true;
+        } else if (!gamepad2.y && y2Last) {
+            y2Last = false;
+        }
+
+        if(gamepad2.x && !x2Last){
+            if(flopPos != 0){
+                flopPos --;
+            }
+            x2Last = true;
+        } else if (!gamepad2.x && x2Last) {
+            x2Last = false;
+        }
+
+        if(flopPos<0) flopPos=0;
+        if(flopPos>2) flopPos=2;
+
+        if(flopPos==0){
+            mainFlop.setPosition(0.85);
+        } else if (flopPos==1) {
+            mainFlop.setPosition(0.5);
+        } else {
+            mainFlop.setPosition(0.2);
+        }
+
+        if(gamepad2.right_bumper && !r12Last){
+            if(r12){
+                subFlop.setPosition(0.6);
+                r12 = false;
+            } else {
+                subFlop.setPosition(0.3);
+                r12 = true;
+            }
+            r12Last = true;
+        } else if (!gamepad2.right_bumper && r12Last) {
+            r12Last = false;
+        }
+    }
+
+    private void reducePowers(float power) {
+
+        if (power > 1.0) {
+
+            float multiplier = 1/power;
+
+            frontLeftPower *= multiplier;
+            frontRightPower *= multiplier;
+            backLeftPower *= multiplier;
+            backRightPower *= multiplier;
+        }
+    }
+
+    @Override
+    public void stop() {}
+}
