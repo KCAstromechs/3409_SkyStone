@@ -14,7 +14,7 @@ public class teleopM1 extends OpMode {
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
     private int turbo = 3;
     private int flopPos = 0;
-    private boolean y, yLast, a2, a2Last, b2, b2Last, y2Last, x2Last, r12, r12Last = false;
+    private boolean y, yLast, l12, l12Last, y2Last, x2Last, r12, r12Last = false;
 
 
     @Override
@@ -34,6 +34,25 @@ public class teleopM1 extends OpMode {
         subFlop = hardwareMap.servo.get("subFlop");
         release = hardwareMap.servo.get("release");
 
+        frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        intakeLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intakeLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
 
@@ -44,41 +63,41 @@ public class teleopM1 extends OpMode {
 
         release.setPosition(0);
         foundRight.setPosition(0.75);
-        foundLeft.setPosition(0.25);
+        foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.55);
+        subFlop.setPosition(0.65);
     }
 
     @Override
     public void loop() {
-        turbo = 3;
+        turbo = 2;
 
-        left = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : gamepad1.left_stick_y;
-        right = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : gamepad1.right_stick_y;
+        left = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : -gamepad1.right_stick_y;
+        right = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : -gamepad1.left_stick_y;
         leftT = (Math.abs(gamepad1.left_trigger) < 0.05) ? 0 : gamepad1.left_trigger;
         rightT = (Math.abs(gamepad1.right_trigger) < 0.05) ? 0 : gamepad1.right_trigger;
 
-        frontLeftPower = left - rightT + leftT;
-        backLeftPower = left + rightT - leftT;
-        frontRightPower = right + rightT - leftT;
-        backRightPower = right - rightT + leftT;
+        frontLeftPower = left + rightT - leftT;
+        backLeftPower = left - rightT + leftT;
+        frontRightPower = right - rightT + leftT;
+        backRightPower = right + rightT - leftT;
 
         reducePowers(Math.max(frontLeftPower, Math.max(backLeftPower, Math.max(frontRightPower, backRightPower))));
 
         if (gamepad1.right_bumper || gamepad1.left_bumper) turbo ++;
 
-        frontRight.setPower((frontRightPower*turbo)/4);
-        backRight.setPower((backRightPower*turbo)/4);
-        frontLeft.setPower((frontLeftPower*turbo)/4);
-        backLeft.setPower((backLeftPower*turbo)/4);
+        frontRight.setPower((frontRightPower*turbo)/3);
+        backRight.setPower((backRightPower*turbo)/3);
+        frontLeft.setPower((frontLeftPower*turbo)/3);
+        backLeft.setPower((backLeftPower*turbo)/3);
 
         if(gamepad1.y && !yLast){
             if(y){
                 foundRight.setPosition(0.75);
-                foundLeft.setPosition(0.25);
+                foundLeft.setPosition(0);
                 y = false;
             } else {
-                foundRight.setPosition(0.1);
+                foundRight.setPosition(0);
                 foundLeft.setPosition(0.75);
                 y = true;
             }
@@ -87,32 +106,28 @@ public class teleopM1 extends OpMode {
             yLast = false;
         }
 
-        if(gamepad2.a && !a2Last){
-            if(a2){
-                intakeLeft.setPower(0);
-                intakeRight.setPower(0);
-                a2 = false;
-            } else {
-                intakeLeft.setPower(1);
-                intakeRight.setPower(1);
-                a2 = true;
-            }
-            a2Last = true;
-        } else if (!gamepad2.a && a2Last) {
-            a2Last = false;
+        if(gamepad2.a){
+            intakeLeft.setPower(1);
+            intakeRight.setPower(1);
+        } else if (gamepad2.b){
+            intakeLeft.setPower(-1);
+            intakeRight.setPower(-1);
+        } else {
+            intakeLeft.setPower(0);
+            intakeRight.setPower(0);
         }
 
-        if(gamepad2.b && !b2Last){
-            if(b2){
+        if(gamepad2.left_bumper && !l12Last){
+            if(l12){
                 release.setPosition(0);
-                b2 = false;
+                l12 = false;
             } else {
                 release.setPosition(1);
-                b2 = true;
+                l12 = true;
             }
-            b2Last = true;
-        } else if (!gamepad2.b && b2Last) {
-            b2Last = false;
+            l12Last = true;
+        } else if (!gamepad2.left_bumper && l12Last) {
+            l12Last = false;
         }
 
         flip.setPower(gamepad2.right_stick_y);
@@ -141,16 +156,16 @@ public class teleopM1 extends OpMode {
         if(flopPos>2) flopPos=2;
 
         if(flopPos==0){
-            mainFlop.setPosition(0.85);
+            mainFlop.setPosition(0.75);
         } else if (flopPos==1) {
-            mainFlop.setPosition(0.5);
+            mainFlop.setPosition(0.35);
         } else {
-            mainFlop.setPosition(0.2);
+            mainFlop.setPosition(0);
         }
 
         if(gamepad2.right_bumper && !r12Last){
             if(r12){
-                subFlop.setPosition(0.6);
+                subFlop.setPosition(0.65);
                 r12 = false;
             } else {
                 subFlop.setPosition(0.3);
@@ -160,6 +175,9 @@ public class teleopM1 extends OpMode {
         } else if (!gamepad2.right_bumper && r12Last) {
             r12Last = false;
         }
+
+        telemetry.addData("lift", lift.getCurrentPosition());
+        telemetry.addData("flip", flip.getCurrentPosition());
     }
 
     private void reducePowers(float power) {
