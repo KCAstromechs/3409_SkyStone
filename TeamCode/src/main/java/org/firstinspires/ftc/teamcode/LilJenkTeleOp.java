@@ -10,13 +10,13 @@ import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 @TeleOp(name="LilJenkTeleOp")
 public class LilJenkTeleOp extends OpMode implements SensorEventListener {
-
     //init vars
-    private float left, right, left2, right2, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft, climbyBoi;
-    private Servo spikeyBoi, grabbyBoi;
+    private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
+    private DcMotor frontRight, frontLeft, backRight, backLeft;
     private double error = 0;
     private int turbo = 9;
     private double globalX = 0;
@@ -29,7 +29,7 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
     private double currentPos = 0;
     private double lastLeftPos = 0;
     private double lastRightPos = 0;
-    private final double loopsPerAccumulate = 1;
+    private final double loopsPerAccumulate = 2;
     private int i = 0;
 
     float zRotation;
@@ -37,6 +37,7 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
     //arrays for gyro operation
     private float[] rotationMatrix = new float[9];
     private float[] orientation = new float[3];
+
     //objects for gyro operation
     private SensorManager mSensorManager;
     private Sensor mRotationVectorSensor;
@@ -58,14 +59,15 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
 
     @Override
     public void init() {
+        mSensorManager = (SensorManager) hardwareMap.appContext.getSystemService(SENSOR_SERVICE);
+        mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
+        mSensorManager.registerListener(this, mRotationVectorSensor, 10000);
+
+
         frontRight = hardwareMap.dcMotor.get("frontRight");
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
-
-        climbyBoi = hardwareMap.dcMotor.get("climbyBoi");
-        spikeyBoi = hardwareMap.servo.get("spikeyBoi");
-        grabbyBoi = hardwareMap.servo.get("grabbyBoi");
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -77,8 +79,6 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
 
         hasBeenZeroed = false;
 
-        spikeyBoi.setPosition(spikeyOpen);
-        grabbyBoi.setPosition(grabbyOpen);
     }
     @Override
     public void loop() {
@@ -95,8 +95,6 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
         i++;
         left = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : -1 * gamepad1.left_stick_y;
         right = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : -1 * gamepad1.right_stick_y;
-        left2 = (Math.abs(gamepad2.left_stick_y) < 0.05) ? 0 : gamepad2.left_stick_y;
-        right2 = (Math.abs(gamepad2.right_stick_y) < 0.1) ? 0 : gamepad2.right_stick_y;
         leftT = (Math.abs(gamepad1.left_trigger) < 0.05) ? 0 : gamepad1.left_trigger;
         rightT = (Math.abs(gamepad1.right_trigger) < 0.05) ? 0 : gamepad1.right_trigger;
 
@@ -107,18 +105,6 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
 
         reducePowers(Math.max(frontLeftPower, Math.max(backLeftPower, Math.max(frontRightPower, backRightPower))));
 
-        if(gamepad2.left_bumper) spikeyBoi.setPosition(spikeyOpen);
-        if(gamepad2.right_bumper) spikeyBoi.setPosition(spikeyClosed);
-
-        if(gamepad2.dpad_up) grabbyBoi.setPosition(grabbyOpen);
-        if (gamepad2.dpad_down) grabbyBoi.setPosition(grabbyClosed);
-
-        if(Math.abs(gamepad2.left_stick_y) > .1 ) {
-            if(gamepad2.left_stick_y < 0) climbyBoi.setPower(gamepad2.left_stick_y * .8);
-            if(gamepad2.left_stick_y > 0) climbyBoi.setPower(gamepad2.left_stick_y * .3);
-        } else {
-            climbyBoi.setPower(0);
-        }
         frontRight.setPower((frontRightPower*turbo)/10);
         backRight.setPower((backRightPower*turbo)/10);
         frontLeft.setPower((frontLeftPower*turbo)/10);
@@ -129,6 +115,10 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
 //        telemetry.addData("down", gamepad1.dpad_down);
         telemetry.addData("X: ", globalX);
         telemetry.addData("Y: ", globalY);
+        telemetry.addData("Theta: ", zRotation);
+        telemetry.addData("leftPos", lastLeftPos);
+        telemetry.addData("rightPos", lastRightPos);
+
         telemetry.update();
     }
 
@@ -145,6 +135,8 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
             frontLeftPower *= multiplier;
             frontRightPower *= multiplier;
             backLeftPower *= multiplier;
+
+
             backRightPower *= multiplier;
         }
     }
