@@ -158,7 +158,7 @@ public class teleopM1 extends OpMode {
         if(flopPos==0){
             mainFlop.setPosition(0.75);
         } else if (flopPos==1) {
-            mainFlop.setPosition(0.35);
+            mainFlop.setPosition(0.13);//.35
         } else {
             mainFlop.setPosition(0);
         }
