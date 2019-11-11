@@ -41,10 +41,15 @@ public class VisionBase {
         vuforia.setFrameQueueCapacity(1);
     }
 
-    public SKYSTONE_POS findSkyStone(int yStart, int yMax, int xStart, int xMax) throws InterruptedException {
-        SKYSTONE_POS SkyStoneState;
+    public SKYSTONE_POS findSkyStone(int xStart, int xMax, int yStart, int yMax, boolean isBlue) throws InterruptedException {
+        SKYSTONE_POS SkyStoneState = SKYSTONE_POS.UNKNOWN;
         int thisR, thisB, thisG;                    //RGB values of current pixel to translate into HSV
         int idx = 0;                                //Ensures we get correct image type from Vuforia
+        boolean rangeTuning = true;
+
+        int rngDividerA = 150;
+        int rngDividerB = 450;
+        int rngDividerC = 750;
 
         //Take an image from Vuforia in the correct format
         VuforiaLocalizer.CloseableFrame frame = vuforia.getFrameQueue().take();
@@ -72,15 +77,14 @@ public class VisionBase {
         int avgSkyStonePixPos = 0;
         int sumSkyStonePixPos = 0;
         int numOfSkyStonePix =  0;
-
-        for (int y = yStart; y < yMax; y++) {
+        for (int y = yStart; y < yMax; y++) { //0-720
 
 //            System.out.println("loop #" + i);
             //If the bot stops you should really stop.
-            if(!(((LinearOpMode) callingOpMode).opModeIsActive())) break;
+            if (!(((LinearOpMode) callingOpMode).opModeIsActive())) break;
 
             //Loop through a certain number of rows to cover a certain area of the image
-            for (int x = xStart; x < xMax; x++) { //925, 935
+            for (int x = xStart; x < xMax; x++) { //0-1280
 
                 rIDX = y * w * 3 + (x * 3);
                 gIDX = y * w * 3 + (x * 3) + 1;
@@ -91,35 +95,34 @@ public class VisionBase {
                 thisG = px.get(gIDX) & 0xFF;
                 thisB = px.get(bIDX) & 0xFF;
 
-                if(thisR>180 && thisG>130 & thisB<100) { //TODO redo ALL filters
+                if (!(thisR > 180 && thisG > 130 & thisB < 100)) {
                     px.put(rIDX, (byte) 0);
                     px.put(gIDX, (byte) 255);
                     px.put(bIDX, (byte) 0);
                     numOfSkyStonePix++;
-                    sumSkyStonePixPos+=x;
-
-                }  //redo ALL boxes
-                if((thisR>230 && thisG>230 && thisB>230) || Math.abs(x - 630) < 10) {
+                    sumSkyStonePixPos += x;
+                }
+                /*
+                if ((Math.abs(x - rngDividerA) < 5 || Math.abs(x - rngDividerB) < 5 || Math.abs(x - rngDividerC) < 5)) {
                     px.put(rIDX, (byte) 0);
                     px.put(gIDX, (byte) 0);
                     px.put(bIDX, (byte) 0);
                 }
+                */
                 //X AXIS
-                if(Math.abs(y - yMax) < 10) {
+                if (Math.abs(y - yStart) < 10) {
                     px.put(rIDX, (byte) 0);
                     px.put(gIDX, (byte) 0);
-                    px.put(bIDX, (byte) 100);
+                    px.put(bIDX, (byte) 200);
                 }
                 //Y AXIS
-                if(Math.abs(x - xMax) < 10) {
-                    px.put(rIDX, (byte) 100);
+                if (Math.abs(x - xStart) < 10) {
+                    px.put(rIDX, (byte) 200);
                     px.put(gIDX, (byte) 0);
                     px.put(bIDX, (byte) 0);
                 }
-                //}
             }
         }
-
 
         long timeStopAnalysis = System.currentTimeMillis();
 
@@ -183,17 +186,44 @@ public class VisionBase {
 
         if(numOfSkyStonePix!=0) avgSkyStonePixPos = (int) (sumSkyStonePixPos/numOfSkyStonePix);
 
-        callingOpMode.telemetry.addData("#gold", numOfSkyStonePix);
-        callingOpMode.telemetry.addData("avgPosGold", avgSkyStonePixPos);
-        callingOpMode.telemetry.addData("yMax", image.getHeight());
-        callingOpMode.telemetry.addData("xMax", image.getWidth());
+        callingOpMode.telemetry.addData("#gold:", numOfSkyStonePix);
+        callingOpMode.telemetry.addData("avgPosGold:", avgSkyStonePixPos);
+        callingOpMode.telemetry.addData("yMax:", image.getHeight());
+        callingOpMode.telemetry.addData("xMax:", image.getWidth());
 
-        return SKYSTONE_POS.CENTER; //TODO Add actual logic here lol
+        if(numOfSkyStonePix > 50) {
+            if(isBlue) {
+                if(avgSkyStonePixPos <= (xMax - xStart)/3) {
+                    SkyStoneState = SKYSTONE_POS.RIGHT;
+                }
+                else if(avgSkyStonePixPos <= 2 * (xMax - xStart)/3) {
+                    SkyStoneState = SKYSTONE_POS.CENTER;
+                }
+                else {
+                    SkyStoneState = SKYSTONE_POS.LEFT;
+                }
+            } else {
+                if(avgSkyStonePixPos <= (xMax - xStart)/3) {
+                    SkyStoneState = SKYSTONE_POS.LEFT;
+                }
+                else if(avgSkyStonePixPos <= 2 * (xMax - xStart)/3) {
+                    SkyStoneState = SKYSTONE_POS.CENTER;
+                }
+                else {
+                    SkyStoneState = SKYSTONE_POS.RIGHT;
+                }
+            }
+        }
+        callingOpMode.telemetry.addData("skystone pos", SkyStoneState);
+        callingOpMode.telemetry.update();
+        return SkyStoneState;
+
     }
 
     public enum SKYSTONE_POS {
         LEFT,
         CENTER,
-        RIGHT;
+        RIGHT,
+        UNKNOWN;
     }
 }
