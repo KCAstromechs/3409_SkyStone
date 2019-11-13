@@ -93,7 +93,7 @@ public class RobotBaseM1 implements SensorEventListener {
         foundRight.setPosition(0.75);
         foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.65);
+        subFlop.setPosition(0.5);
 
         mSensorManager = (SensorManager) _callingOpMode.hardwareMap.appContext.getSystemService(SENSOR_SERVICE);
         mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
@@ -449,6 +449,59 @@ public class RobotBaseM1 implements SensorEventListener {
         foundRight.setPosition(0);
         foundLeft.setPosition(0.75);
         Thread.sleep(1100);
+    }
+
+    public void releaseFoundation () throws InterruptedException {
+        foundRight.setPosition(0.75);
+        foundLeft.setPosition(0);
+        Thread.sleep(1100);
+    }
+
+    public void mainFlopDown () throws InterruptedException {
+        mainFlop.setPosition(0);
+        Thread.sleep(400);
+    }
+
+    public void mainFlopMid () throws InterruptedException {
+        mainFlop.setPosition(0.15);
+        Thread.sleep(400);
+    }
+
+    public void mainFlopUp () throws InterruptedException {
+        mainFlop.setPosition(0.75);
+        Thread.sleep(400);
+    }
+
+    public void grabStone () throws InterruptedException {
+        subFlop.setPosition(0.3);
+        Thread.sleep(400);
+    }
+
+    public void releaseStone () throws InterruptedException {
+        subFlop.setPosition(0.5);
+        Thread.sleep(400);
+    }
+
+    public void lift2F () throws InterruptedException {
+        if (lift.getCurrentPosition() < 500) {
+            lift.setPower(0.9);
+            while (lift.getCurrentPosition() < 500) {Thread.sleep(10);}
+        } else if (lift.getCurrentPosition() > 500) {
+            lift.setPower(-0.9);
+            while (lift.getCurrentPosition() > 500) {Thread.sleep(10);}
+        }
+        lift.setPower(0);
+    }
+
+    public void lift1F () throws InterruptedException {
+        if (lift.getCurrentPosition() < 100) {
+            lift.setPower(0.9);
+            while (lift.getCurrentPosition() < 100) {Thread.sleep(10);}
+        } else if (lift.getCurrentPosition() > 100) {
+            lift.setPower(-0.9);
+            while (lift.getCurrentPosition() > 100) {Thread.sleep(10);}
+        }
+        lift.setPower(0);
     }
 
     protected float normalize360two(float val) {

@@ -12,7 +12,7 @@ public class encoderTest extends LinearOpMode {
 
         waitForStart();
 
-        while(true){
+        while(opModeIsActive()){
             telemetry.addData("frontRight", robotBase.getCurrentFrontRightPosition());
             telemetry.addData("frontLeft", robotBase.getCurrentFrontLeftPosition());
             telemetry.addData("backRight", robotBase.getCurrentBackRightPosition());

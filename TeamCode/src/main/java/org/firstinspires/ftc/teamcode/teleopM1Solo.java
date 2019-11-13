@@ -5,8 +5,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
-@TeleOp(name="teleop m1")
-public class teleopM1 extends OpMode {
+@TeleOp(name="teleop m1 solo")
+public class teleopM1Solo extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
@@ -84,14 +84,14 @@ public class teleopM1 extends OpMode {
 
         reducePowers(Math.max(frontLeftPower, Math.max(backLeftPower, Math.max(frontRightPower, backRightPower))));
 
-        if (gamepad1.right_bumper || gamepad1.left_bumper) turbo ++;
+        if (gamepad1.left_bumper) turbo ++;
 
         frontRight.setPower((frontRightPower*turbo)/3);
         backRight.setPower((backRightPower*turbo)/3);
         frontLeft.setPower((frontLeftPower*turbo)/3);
         backLeft.setPower((backLeftPower*turbo)/3);
 
-        if(gamepad1.y && !yLast){
+        if(gamepad1.a && !yLast){
             if(y){
                 foundRight.setPosition(0.75);
                 foundLeft.setPosition(0);
@@ -102,7 +102,7 @@ public class teleopM1 extends OpMode {
                 y = true;
             }
             yLast = true;
-        } else if (!gamepad1.y && yLast) {
+        } else if (!gamepad1.a && yLast) {
             yLast = false;
         }
 
@@ -132,23 +132,31 @@ public class teleopM1 extends OpMode {
 
         flip.setPower(gamepad2.right_stick_y);
 
-        lift.setPower(-gamepad2.left_stick_y);
+        lift.setPower(gamepad2.left_stick_y);
 
-        if(gamepad2.y && !y2Last){
+        if (gamepad1.dpad_up){
+            lift.setPower(1);
+        } else if (gamepad1.dpad_down) {
+            lift.setPower(-1);
+        } else {
+            lift.setPower(0);
+        }
+
+        if(gamepad1.y && !y2Last){
             if(flopPos != 2){
                 flopPos ++;
             }
             y2Last = true;
-        } else if (!gamepad2.y && y2Last) {
+        } else if (!gamepad1.x && y2Last) {
             y2Last = false;
         }
 
-        if(gamepad2.x && !x2Last){
+        if(gamepad1.x && !x2Last){
             if(flopPos != 0){
                 flopPos --;
             }
             x2Last = true;
-        } else if (!gamepad2.x && x2Last) {
+        } else if (!gamepad1.x && x2Last) {
             x2Last = false;
         }
 
@@ -163,7 +171,7 @@ public class teleopM1 extends OpMode {
             mainFlop.setPosition(0);
         }
 
-        if(gamepad2.right_bumper && !r12Last){
+        if(gamepad1.right_bumper && !r12Last){
             if(r12){
                 subFlop.setPosition(0.5);
                 r12 = false;
@@ -172,7 +180,7 @@ public class teleopM1 extends OpMode {
                 r12 = true;
             }
             r12Last = true;
-        } else if (!gamepad2.right_bumper && r12Last) {
+        } else if (!gamepad1.right_bumper && r12Last) {
             r12Last = false;
         }
 

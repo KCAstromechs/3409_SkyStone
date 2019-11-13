@@ -12,11 +12,15 @@ public class spike_moveFoundation extends LinearOpMode {
 
         waitForStart();
 
-        robotBase.driveStraight(16, 0, 0.675);
-        robotBase.driveStraight(1, 0, -0.6);
+        robotBase.driveStraight(18, 0, 0.675);
+        robotBase.driveStraight(4.5, 0, 0.2);
+        robotBase.driveStraight(2, 0, 0.06);
+        /*robotBase.driveStraight(23, 0, 0.675);
+        robotBase.driveStraight(1.5, 0, -0.6);*/
         robotBase.stopAndReset();
         robotBase.grabFoundation();
-        robotBase.arcDrive(9.5, 280, -0.7, false, 1.2);
+        robotBase.turn(300, 0.7);
+        //robotBase.arcDrive(42, 280, -0.7, false, 4.2);
         robotBase.stopAndReset();
         sleep(1000000);
         ////robotBase.turn(300, 0.7);
