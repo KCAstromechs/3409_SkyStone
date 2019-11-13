@@ -15,6 +15,7 @@ public class teleopM1 extends OpMode {
     private int turbo = 3;
     private int flopPos = 0;
     private boolean y, yLast, l12, l12Last, y2Last, x2Last, r12, r12Last = false;
+    private int subFlopLast = 1;
 
 
     @Override
@@ -65,7 +66,7 @@ public class teleopM1 extends OpMode {
         foundRight.setPosition(0.75);
         foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.5);
+        subFlop.setPosition(0.35);
     }
 
     @Override
@@ -91,7 +92,7 @@ public class teleopM1 extends OpMode {
         frontLeft.setPower((frontLeftPower*turbo)/3);
         backLeft.setPower((backLeftPower*turbo)/3);
 
-        if(gamepad1.y && !yLast){
+        if(gamepad1.y && !yLast && flopPos == 0){
             if(y){
                 foundRight.setPosition(0.75);
                 foundLeft.setPosition(0);
@@ -134,9 +135,27 @@ public class teleopM1 extends OpMode {
 
         lift.setPower(-gamepad2.left_stick_y);
 
+        if(gamepad2.right_bumper && !r12Last && flopPos!=0){
+            if(r12){
+                subFlop.setPosition(0.35);
+                subFlopLast = 1;
+                r12 = false;
+            } else {
+                subFlop.setPosition(0.7);
+                subFlopLast = 2;
+                r12 = true;
+            }
+            r12Last = true;
+        } else if (!gamepad2.right_bumper && r12Last) {
+            r12Last = false;
+        }
+
         if(gamepad2.y && !y2Last){
             if(flopPos != 2){
                 flopPos ++;
+                if(flopPos == 1 && subFlopLast==2){
+                    subFlop.setPosition(0.5);
+                }
             }
             y2Last = true;
         } else if (!gamepad2.y && y2Last) {
@@ -156,24 +175,12 @@ public class teleopM1 extends OpMode {
         if(flopPos>2) flopPos=2;
 
         if(flopPos==0){
-            mainFlop.setPosition(0.75);
+            mainFlop.setPosition(0.7);
+            subFlop.setPosition(0.35);
         } else if (flopPos==1) {
-            mainFlop.setPosition(0.13);//.35
+            mainFlop.setPosition(0.15);//.35
         } else {
             mainFlop.setPosition(0);
-        }
-
-        if(gamepad2.right_bumper && !r12Last){
-            if(r12){
-                subFlop.setPosition(0.5);
-                r12 = false;
-            } else {
-                subFlop.setPosition(0.3);
-                r12 = true;
-            }
-            r12Last = true;
-        } else if (!gamepad2.right_bumper && r12Last) {
-            r12Last = false;
         }
 
         telemetry.addData("lift", lift.getCurrentPosition());

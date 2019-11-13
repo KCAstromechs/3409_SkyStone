@@ -15,6 +15,7 @@ public class teleopM1Solo extends OpMode {
     private int turbo = 3;
     private int flopPos = 0;
     private boolean y, yLast, l12, l12Last, y2Last, x2Last, r12, r12Last = false;
+    private int subFlopLast = 1;
 
 
     @Override
@@ -65,7 +66,7 @@ public class teleopM1Solo extends OpMode {
         foundRight.setPosition(0.75);
         foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.5);
+        subFlop.setPosition(0.35);
     }
 
     @Override
@@ -91,7 +92,7 @@ public class teleopM1Solo extends OpMode {
         frontLeft.setPower((frontLeftPower*turbo)/3);
         backLeft.setPower((backLeftPower*turbo)/3);
 
-        if(gamepad1.a && !yLast){
+        if(gamepad1.y && !yLast && flopPos == 0){
             if(y){
                 foundRight.setPosition(0.75);
                 foundLeft.setPosition(0);
@@ -102,7 +103,7 @@ public class teleopM1Solo extends OpMode {
                 y = true;
             }
             yLast = true;
-        } else if (!gamepad1.a && yLast) {
+        } else if (!gamepad1.y && yLast) {
             yLast = false;
         }
 
@@ -142,21 +143,39 @@ public class teleopM1Solo extends OpMode {
             lift.setPower(0);
         }
 
-        if(gamepad1.y && !y2Last){
+        if(gamepad1.right_bumper && !r12Last && flopPos!=0){
+            if(r12){
+                subFlop.setPosition(0.35);
+                subFlopLast = 1;
+                r12 = false;
+            } else {
+                subFlop.setPosition(0.7);
+                subFlopLast = 2;
+                r12 = true;
+            }
+            r12Last = true;
+        } else if (!gamepad1.right_bumper && r12Last) {
+            r12Last = false;
+        }
+
+        if(gamepad1.a && !y2Last){
             if(flopPos != 2){
                 flopPos ++;
+                if(subFlopLast==2){
+                    subFlop.setPosition(0.5);
+                }
             }
             y2Last = true;
-        } else if (!gamepad1.x && y2Last) {
+        } else if (!gamepad1.a && y2Last) {
             y2Last = false;
         }
 
-        if(gamepad1.x && !x2Last){
+        if(gamepad1.b && !x2Last){
             if(flopPos != 0){
                 flopPos --;
             }
             x2Last = true;
-        } else if (!gamepad1.x && x2Last) {
+        } else if (!gamepad1.b && x2Last) {
             x2Last = false;
         }
 
@@ -164,24 +183,12 @@ public class teleopM1Solo extends OpMode {
         if(flopPos>2) flopPos=2;
 
         if(flopPos==0){
-            mainFlop.setPosition(0.75);
+            mainFlop.setPosition(0.7);
+            subFlop.setPosition(0.35);
         } else if (flopPos==1) {
-            mainFlop.setPosition(0.13);//.35
+            mainFlop.setPosition(0.15);//.35
         } else {
             mainFlop.setPosition(0);
-        }
-
-        if(gamepad1.right_bumper && !r12Last){
-            if(r12){
-                subFlop.setPosition(0.5);
-                r12 = false;
-            } else {
-                subFlop.setPosition(0.3);
-                r12 = true;
-            }
-            r12Last = true;
-        } else if (!gamepad1.right_bumper && r12Last) {
-            r12Last = false;
         }
 
         telemetry.addData("lift", lift.getCurrentPosition());

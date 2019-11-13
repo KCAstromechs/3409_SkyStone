@@ -50,6 +50,8 @@ public class RobotBaseM1 implements SensorEventListener {
 
     float zRotation;
 
+    int pos = 1;
+
     public RobotBaseM1 (OpMode _callingOpMode) {
         callingOpMode = _callingOpMode;
 
@@ -93,7 +95,7 @@ public class RobotBaseM1 implements SensorEventListener {
         foundRight.setPosition(0.75);
         foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.5);
+        subFlop.setPosition(0.35);
 
         mSensorManager = (SensorManager) _callingOpMode.hardwareMap.appContext.getSystemService(SENSOR_SERVICE);
         mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
@@ -468,19 +470,71 @@ public class RobotBaseM1 implements SensorEventListener {
     }
 
     public void mainFlopUp () throws InterruptedException {
-        mainFlop.setPosition(0.75);
+        mainFlop.setPosition(0.7);
+        subFlop.setPosition(0.35);
         Thread.sleep(400);
     }
 
     public void grabStone () throws InterruptedException {
-        subFlop.setPosition(0.3);
+        subFlop.setPosition(0.35);
         Thread.sleep(400);
     }
 
     public void releaseStone () throws InterruptedException {
-        subFlop.setPosition(0.5);
+        subFlop.setPosition(0.7);
         Thread.sleep(400);
     }
+
+
+
+    /*
+    *   pos 1 == closed & up
+    *   pos 2 == open & mid
+    *   pos 3 == closed & mid
+    *   pos 4 == open & down
+    *   pos 5 == closed & down
+     */
+
+    public void pos1 () throws InterruptedException {
+        pos = 1;
+        mainFlop.setPosition(0.7);
+        subFlop.setPosition(0.35);
+        Thread.sleep(400);
+    }
+
+    public void pos2 () throws InterruptedException {
+        pos = 2;
+        mainFlop.setPosition(0.15);
+        subFlop.setPosition(0.7);
+        Thread.sleep(400);
+    }
+
+    public void pos3 () throws InterruptedException {
+        pos = 3;
+        mainFlop.setPosition(0.15);
+        subFlop.setPosition(0.35);
+        Thread.sleep(400);
+    }
+
+    public void pos4 () throws InterruptedException {
+        pos = 4;
+        mainFlop.setPosition(0);
+        subFlop.setPosition(0.7);
+        Thread.sleep(400);
+    }
+
+    public void pos5 () throws InterruptedException {
+        pos = 5;
+        mainFlop.setPosition(0);
+        subFlop.setPosition(0.35);
+        Thread.sleep(400);
+    }
+
+    public int getPos () {
+        return pos;
+    }
+
+
 
     public void lift2F () throws InterruptedException {
         if (lift.getCurrentPosition() < 500) {
@@ -500,6 +554,17 @@ public class RobotBaseM1 implements SensorEventListener {
         } else if (lift.getCurrentPosition() > 100) {
             lift.setPower(-0.9);
             while (lift.getCurrentPosition() > 100) {Thread.sleep(10);}
+        }
+        lift.setPower(0);
+    }
+
+    public void liftReset () throws InterruptedException {
+        if (lift.getCurrentPosition() < 10) {
+            lift.setPower(0.9);
+            while (lift.getCurrentPosition() < 10) {Thread.sleep(10);}
+        } else if (lift.getCurrentPosition() > 10) {
+            lift.setPower(-0.9);
+            while (lift.getCurrentPosition() > 10) {Thread.sleep(10);}
         }
         lift.setPower(0);
     }
