@@ -41,7 +41,7 @@ public class VisionBase {
         vuforia.setFrameQueueCapacity(1);
     }
 
-    public SKYSTONE_POS findSkyStone(int xStart, int xMax, int yStart, int yMax, boolean isBlue) throws InterruptedException {
+    public SKYSTONE_POS findSkyStone(int xStart, int xMax, int yStart, int yMax) throws InterruptedException {
         SKYSTONE_POS SkyStoneState = SKYSTONE_POS.UNKNOWN;
         int thisR, thisB, thisG;                    //RGB values of current pixel to translate into HSV
         int idx = 0;                                //Ensures we get correct image type from Vuforia
@@ -77,14 +77,16 @@ public class VisionBase {
         int avgSkyStonePixPos = 0;
         int sumSkyStonePixPos = 0;
         int numOfSkyStonePix =  0;
-        for (int y = yStart; y < yMax; y++) { //0-720
 
+        Thread.sleep(100);
+        for (int y = yStart; y < yMax; y++) { //0-720
 //            System.out.println("loop #" + i);
             //If the bot stops you should really stop.
             if (!(((LinearOpMode) callingOpMode).opModeIsActive())) break;
 
             //Loop through a certain number of rows to cover a certain area of the image
             for (int x = xStart; x < xMax; x++) { //0-1280
+                //System.out.println("pix #: " + ((y - yStart + 1) * (x - xStart + 1)));
 
                 rIDX = y * w * 3 + (x * 3);
                 gIDX = y * w * 3 + (x * 3) + 1;
@@ -191,27 +193,18 @@ public class VisionBase {
         callingOpMode.telemetry.addData("yMax:", image.getHeight());
         callingOpMode.telemetry.addData("xMax:", image.getWidth());
 
+
+        int windowSize = xMax-xStart;
+
         if(numOfSkyStonePix > 50) {
-            if(isBlue) {
-                if(avgSkyStonePixPos <= (xMax - xStart)/3) {
-                    SkyStoneState = SKYSTONE_POS.RIGHT;
-                }
-                else if(avgSkyStonePixPos <= 2 * (xMax - xStart)/3) {
-                    SkyStoneState = SKYSTONE_POS.CENTER;
-                }
-                else {
-                    SkyStoneState = SKYSTONE_POS.LEFT;
-                }
-            } else {
-                if(avgSkyStonePixPos <= (xMax - xStart)/3) {
-                    SkyStoneState = SKYSTONE_POS.LEFT;
-                }
-                else if(avgSkyStonePixPos <= 2 * (xMax - xStart)/3) {
-                    SkyStoneState = SKYSTONE_POS.CENTER;
-                }
-                else {
-                    SkyStoneState = SKYSTONE_POS.RIGHT;
-                }
+            if(avgSkyStonePixPos <= windowSize/3 + xStart) {
+                SkyStoneState = SKYSTONE_POS.RIGHT;
+            }
+            else if(avgSkyStonePixPos <= 2 * windowSize/3 + xStart) {
+                SkyStoneState = SKYSTONE_POS.CENTER;
+            }
+            else {
+                SkyStoneState = SKYSTONE_POS.LEFT;
             }
         }
         callingOpMode.telemetry.addData("skystone pos", SkyStoneState);
