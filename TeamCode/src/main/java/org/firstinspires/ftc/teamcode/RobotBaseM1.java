@@ -198,6 +198,54 @@ public class RobotBaseM1 implements SensorEventListener {
         }
     }
 
+    public void driveStraightTime(long millis, float heading, double power)  throws InterruptedException {
+        double error;                                           //The number of degrees between the true heading and desired heading
+        double correction;                                      //Modifies power to account for error
+        double leftPower;                                       //Power being fed to left side of bot
+        double rightPower;                                      //Power being fed to right side of bot
+        double max;                                             //To be used to keep powers from exceeding 1
+        long loops = 0;
+        heading = (int) normalize360(heading);
+
+        setEncoderBase();
+
+        power = Range.clip(power, -1.0, 1.0);
+
+        long startTime = System.currentTimeMillis();
+
+
+        while ((System.currentTimeMillis() < (startTime+millis))  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+
+            error = heading - zRotation;
+
+            while (error > 180) error = (error - 360);
+            while (error <= -180) error = (error + 360);
+
+            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
+
+            leftPower = power - correction;
+            rightPower = power + correction;
+
+            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
+            if (max > 1.0) {
+                leftPower /= max;
+                rightPower /= max;
+            }
+            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
+
+            if (((loops+10) % 10) ==  0) {
+                callingOpMode.telemetry.addData("gyro" , zRotation);
+                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
+                callingOpMode.telemetry.addData("loops", loops);
+                callingOpMode.telemetry.update();
+            }
+
+            loops++;
+
+            Thread.yield();
+        }
+    }
+
     public void turn(float turnHeading, double power) throws InterruptedException {
         int wrapFix = 0;                                        //Can be used to modify values and make math around 0 easier
         float shiftedTurnHeading = turnHeading;                 //Can be used in conjunction with wrapFix to make math around 0 easier
@@ -535,6 +583,17 @@ public class RobotBaseM1 implements SensorEventListener {
     }
 
 
+
+    public void lift3F () throws InterruptedException {
+        if (lift.getCurrentPosition() < 1000) {
+            lift.setPower(0.9);
+            while (lift.getCurrentPosition() < 1000) {Thread.sleep(10);}
+        } else if (lift.getCurrentPosition() > 1000) {
+            lift.setPower(-0.9);
+            while (lift.getCurrentPosition() > 1000) {Thread.sleep(10);}
+        }
+        lift.setPower(0);
+    }
 
     public void lift2F () throws InterruptedException {
         if (lift.getCurrentPosition() < 500) {
