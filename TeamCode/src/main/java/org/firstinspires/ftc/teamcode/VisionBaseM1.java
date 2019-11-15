@@ -21,12 +21,12 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class VisionBase {
+public class VisionBaseM1 {
 
     private VuforiaLocalizer vuforia;
     private OpMode callingOpMode;
 
-    public VisionBase(OpMode _callingOpMode) {
+    public VisionBaseM1(OpMode _callingOpMode) {
         //do init stuff here
         callingOpMode = _callingOpMode;
 
