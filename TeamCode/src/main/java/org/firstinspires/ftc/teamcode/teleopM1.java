@@ -63,8 +63,6 @@ public class teleopM1 extends OpMode {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         release.setPosition(0);
-        foundRight.setPosition(0.75);
-        foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
         subFlop.setPosition(0.35);
     }

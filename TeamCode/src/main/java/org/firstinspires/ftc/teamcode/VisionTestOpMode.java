@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 @TeleOp(name="VisionTest")
 public class VisionTestOpMode extends LinearOpMode {
-    VisionBase visionBoi = new VisionBase(this);
+    VisionBaseM1 visionBoi = new VisionBaseM1(this);
 
     int startX = 400;
     int stopX = 1280;

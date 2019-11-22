@@ -504,7 +504,6 @@ public class RobotBaseM1 implements SensorEventListener {
     public void releaseFoundation () throws InterruptedException {
         foundRight.setPosition(0.75);
         foundLeft.setPosition(0);
-        Thread.sleep(1100);
     }
 
     public void mainFlopDown () throws InterruptedException {
