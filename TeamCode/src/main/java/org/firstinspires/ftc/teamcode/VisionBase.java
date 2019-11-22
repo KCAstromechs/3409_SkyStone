@@ -97,7 +97,7 @@ public class VisionBase {
                 thisG = px.get(gIDX) & 0xFF;
                 thisB = px.get(bIDX) & 0xFF;
 
-                if (!(thisR > 180 && thisG > 130 & thisB < 100)) {
+                if (!(thisR > 180 && thisG > 130 & thisB < 130)) { //B < 100
                     px.put(rIDX, (byte) 0);
                     px.put(gIDX, (byte) 255);
                     px.put(bIDX, (byte) 0);
