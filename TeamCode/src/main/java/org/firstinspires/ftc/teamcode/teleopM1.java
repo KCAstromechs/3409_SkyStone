@@ -3,7 +3,11 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
+import com.qualcomm.robotcore.hardware.OpticalDistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
+
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @TeleOp(name="teleop m1")
 public class teleopM1 extends OpMode {
@@ -12,6 +16,7 @@ public class teleopM1 extends OpMode {
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
     private DcMotor frontRight, frontLeft, backRight, backLeft, lift, flip, intakeRight, intakeLeft;
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
+    private DistanceSensor distSensor;
     private int turbo = 3;
     private int flopPos = 0;
     private boolean y, yLast, l12, l12Last, y2Last, x2Last, r12, r12Last = false;
@@ -34,6 +39,8 @@ public class teleopM1 extends OpMode {
         mainFlop = hardwareMap.servo.get("mainFlop");
         subFlop = hardwareMap.servo.get("subFlop");
         release = hardwareMap.servo.get("release");
+
+        distSensor = hardwareMap.get(DistanceSensor.class, "distSensor");
 
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -183,6 +190,8 @@ public class teleopM1 extends OpMode {
 
         telemetry.addData("lift", lift.getCurrentPosition());
         telemetry.addData("flip", flip.getCurrentPosition());
+        telemetry.addData("range", String.format("%.01f in", distSensor.getDistance(DistanceUnit.INCH)));
+        telemetry.update();
     }
 
     private void reducePowers(float power) {

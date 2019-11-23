@@ -31,6 +31,7 @@ public class M1TeleOp extends OpMode {
         Servo subFlop = hardwareMap.servo.get("subFlop");
         Servo release = hardwareMap.servo.get("release");
 
+
         foundationLeft.setPosition(foundationLeftRetracted);
         foundationRight.setPosition(foundationRightRetracted);
         mainFlop.setPosition(1);
