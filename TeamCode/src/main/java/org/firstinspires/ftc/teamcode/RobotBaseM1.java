@@ -4,14 +4,16 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import static android.content.Context.SENSOR_SERVICE;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
-import static android.content.Context.SENSOR_SERVICE;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
 public class RobotBaseM1 implements SensorEventListener {
@@ -36,6 +38,8 @@ public class RobotBaseM1 implements SensorEventListener {
 
     int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderMotorBaseEncoder, backLeftBaseEncoder = 0;
 
+
+    private DistanceSensor distSensor;
     //variables for gyro operation
     private float zero;
     private float rawGyro;
@@ -70,6 +74,8 @@ public class RobotBaseM1 implements SensorEventListener {
         mainFlop   = callingOpMode.hardwareMap.servo.get("mainFlop");
         subFlop    = callingOpMode.hardwareMap.servo.get("subFlop");
         release    = callingOpMode.hardwareMap.servo.get("release");
+
+        distSensor = callingOpMode.hardwareMap.get(DistanceSensor.class, "distSensor");
 
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
@@ -206,6 +212,7 @@ public class RobotBaseM1 implements SensorEventListener {
             Thread.yield();
         }
     }
+
     public void driveStraightOdometerSpike(double inches, float heading, double power)  throws InterruptedException {
         double error;                                           //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
@@ -243,7 +250,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
             if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
+                callingOpMode.telemetry.addData("encoder" , getEncoderMotorPosition());
                 callingOpMode.telemetry.addData("loops", loops);
                 callingOpMode.telemetry.update();
             }
@@ -252,6 +259,52 @@ public class RobotBaseM1 implements SensorEventListener {
 
             Thread.yield();
         }
+    }
+
+    public void yeetBlock() throws InterruptedException{
+        double angleError, linearError;                                           //The number of degrees between the true heading and desired heading
+        double correction;                                      //Modifies power to account for error
+        double leftPower;                                       //Power being fed to left side of bot
+        double rightPower;                                      //Power being fed to right side of bot
+        double max;                                             //To be used to keep powers from exceeding 1
+        double heading = zRotation;
+        long loops = 0;
+
+        double coefP =.075;
+        double baseP =.19;
+        double power =baseP;
+        double fastPower = .4;
+        pos4();
+        /*while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+            updateDriveMotors(power, power, power, power);
+            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
+            callingOpMode.telemetry.update();
+            Thread.sleep(5);
+        }*/
+        while(distSensor.getDistance(DistanceUnit.INCH) >= 1.4 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+            angleError = heading - zRotation;
+            while (angleError > 180) angleError = (angleError - 360);
+            while (angleError <= -180) angleError = (angleError + 360);
+
+            correction = Range.clip(angleError * P_DRIVE_COEFF, -1, 1);
+
+            power = distSensor.getDistance(DistanceUnit.INCH) * coefP;
+            leftPower = power - correction;
+            rightPower = power + correction;
+
+            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
+            if (max > 1.0) {
+                leftPower /= max;
+                rightPower /= max;
+            }
+            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
+            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
+            callingOpMode.telemetry.update();
+            Thread.sleep(5);
+        }
+        stopAndReset();
+        pos5();
+        pos3();
     }
 
     public void driveStraightTime(long millis, float heading, double power)  throws InterruptedException {
