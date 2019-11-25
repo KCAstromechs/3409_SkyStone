@@ -18,7 +18,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
 public class RobotBaseM1 implements SensorEventListener {
 
-    DcMotor frontRight, frontLeft, backRight, backLeft, encoderMotor, lift, flip;
+    DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
 
     Servo foundRight, foundLeft, mainFlop, subFlop, release;
 
@@ -36,7 +36,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
     static final double driveSpeed = 0.9;
 
-    int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderMotorBaseEncoder, backLeftBaseEncoder = 0;
+    int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelBaseEncoder, encoderWheelHorizontalBaseEncoder, backLeftBaseEncoder = 0;
 
 
     private DistanceSensor distSensor;
@@ -65,7 +65,8 @@ public class RobotBaseM1 implements SensorEventListener {
         frontLeft = callingOpMode.hardwareMap.dcMotor.get("frontLeft");
         backRight = callingOpMode.hardwareMap.dcMotor.get("backRight");
         backLeft = callingOpMode.hardwareMap.dcMotor.get("backLeft");
-        encoderMotor = callingOpMode.hardwareMap.dcMotor.get("encoderMotor");
+        encoderWheel = callingOpMode.hardwareMap.dcMotor.get("encoderWheel");
+        encoderWheelHorizontal = callingOpMode.hardwareMap.dcMotor.get("encoderWheelHorizontal");
         lift = callingOpMode.hardwareMap.dcMotor.get("lift");
         flip = callingOpMode.hardwareMap.dcMotor.get("flip");
 
@@ -85,7 +86,7 @@ public class RobotBaseM1 implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -93,7 +94,7 @@ public class RobotBaseM1 implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -132,13 +133,15 @@ public class RobotBaseM1 implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         Thread.sleep(10);
     }
@@ -148,7 +151,8 @@ public class RobotBaseM1 implements SensorEventListener {
         frontLeftBaseEncoder = frontLeft.getCurrentPosition();
         backRightBaseEncoder = backRight.getCurrentPosition();
         backLeftBaseEncoder = backLeft.getCurrentPosition();
-        encoderMotorBaseEncoder = encoderMotor.getCurrentPosition();
+        encoderWheelBaseEncoder = encoderWheel.getCurrentPosition();
+        encoderWheelHorizontalBaseEncoder = encoderWheel.getCurrentPosition();
     }
 
     public int getCurrentFrontRightPosition() {return Math.abs(frontRight.getCurrentPosition()-frontRightBaseEncoder);}
@@ -161,7 +165,9 @@ public class RobotBaseM1 implements SensorEventListener {
 
     public int getCurrentAveragePosition() {return Math.abs((getCurrentBackLeftPosition()+getCurrentBackRightPosition()+getCurrentFrontRightPosition())/3);} //frontLeft is MIA
 
-    public int getEncoderMotorPosition() {return Math.abs(encoderMotor.getCurrentPosition()-encoderMotorBaseEncoder);}
+    public int getEncoderWheelPosition() {return Math.abs(encoderWheel.getCurrentPosition()-encoderWheelBaseEncoder);}
+
+    public int getEncoderWheelHorizontalPosition() {return Math.abs(encoderWheelHorizontal.getCurrentPosition()-encoderWheelHorizontalBaseEncoder);}
 
     public void driveStraight(double inches, float heading) throws InterruptedException { driveStraight(inches, heading, driveSpeed); }
 
@@ -229,7 +235,7 @@ public class RobotBaseM1 implements SensorEventListener {
         power = Range.clip(power, -1.0, 1.0);
 
 
-        while (Math.abs(target) > Math.abs(getCurrentAveragePosition())  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+        while (Math.abs(target) > Math.abs(getEncoderWheelPosition())  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
             error = heading - zRotation;
 
