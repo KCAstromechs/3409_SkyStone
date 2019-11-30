@@ -256,7 +256,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
             if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getEncoderMotorPosition());
+                callingOpMode.telemetry.addData("encoder" , getEncoderWheelPosition());
                 callingOpMode.telemetry.addData("loops", loops);
                 callingOpMode.telemetry.update();
             }
@@ -276,7 +276,7 @@ public class RobotBaseM1 implements SensorEventListener {
         double heading = zRotation;
         long loops = 0;
 
-        double coefP =.075;
+        double coefP =.035;
         double baseP =.19;
         double power =baseP;
         double fastPower = .4;
