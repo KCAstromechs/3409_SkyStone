@@ -275,8 +275,12 @@ public class RobotBaseM1 implements SensorEventListener {
         double max;                                             //To be used to keep powers from exceeding 1
         double heading = zRotation;
         long loops = 0;
-
-        double coefP =.035;
+        double deltaTime;
+        double derivativeTimeStamp = System.currentTimeMillis();
+        double derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
+        double coefP =.08;
+        double coefD = -.19;
+        double Dterm = 0;
         double baseP =.19;
         double power =baseP;
         double fastPower = .4;
@@ -287,14 +291,25 @@ public class RobotBaseM1 implements SensorEventListener {
             callingOpMode.telemetry.update();
             Thread.sleep(5);
         }*/
-        while(distSensor.getDistance(DistanceUnit.INCH) >= 1.4 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+        double distLast = distSensor.getDistance(DistanceUnit.INCH);
+        double timeLast = System.currentTimeMillis();
+        while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
             angleError = heading - zRotation;
             while (angleError > 180) angleError = (angleError - 360);
             while (angleError <= -180) angleError = (angleError + 360);
 
             correction = Range.clip(angleError * P_DRIVE_COEFF, -1, 1);
 
-            power = distSensor.getDistance(DistanceUnit.INCH) * coefP;
+            deltaTime = timeLast - System.currentTimeMillis();
+            callingOpMode.telemetry.addData("delta time:", deltaTime);
+            if(System.currentTimeMillis() - derivativeTimeStamp > 50) {
+                Dterm = (derivativeDistStamp - distSensor.getDistance(DistanceUnit.INCH))/(System.currentTimeMillis() - derivativeTimeStamp);
+                derivativeTimeStamp = System.currentTimeMillis();
+                derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
+            }
+            power = distSensor.getDistance(DistanceUnit.INCH) * coefP + Dterm * coefD;
+            callingOpMode.telemetry.addData("DDD:", Dterm + coefD);
+            timeLast = System.currentTimeMillis();
             leftPower = power - correction;
             rightPower = power + correction;
 
