@@ -4,14 +4,16 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import static android.content.Context.SENSOR_SERVICE;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 
-import static android.content.Context.SENSOR_SERVICE;
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
 public class RobotBaseM1 implements SensorEventListener {
@@ -36,6 +38,8 @@ public class RobotBaseM1 implements SensorEventListener {
 
     int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelBaseEncoder, encoderWheelHorizontalBaseEncoder, backLeftBaseEncoder = 0;
 
+
+    private DistanceSensor distSensor;
     //variables for gyro operation
     private float zero;
     private float rawGyro;
@@ -71,6 +75,8 @@ public class RobotBaseM1 implements SensorEventListener {
         mainFlop   = callingOpMode.hardwareMap.servo.get("mainFlop");
         subFlop    = callingOpMode.hardwareMap.servo.get("subFlop");
         release    = callingOpMode.hardwareMap.servo.get("release");
+
+        distSensor = callingOpMode.hardwareMap.get(DistanceSensor.class, "distSensor");
 
         frontRight.setDirection(DcMotor.Direction.REVERSE);
         backRight.setDirection(DcMotor.Direction.REVERSE);
@@ -293,7 +299,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
             if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
+                callingOpMode.telemetry.addData("encoder" , getEncoderWheelPosition());
                 callingOpMode.telemetry.addData("loops", loops);
                 callingOpMode.telemetry.addData("deltaD", deltaD);
                 callingOpMode.telemetry.addData("deltaT", deltaT);
@@ -306,6 +312,67 @@ public class RobotBaseM1 implements SensorEventListener {
 
             ((LinearOpMode) callingOpMode).sleep(10);
         }
+    }
+
+    public void yeetBlock() throws InterruptedException{
+        double angleError, linearError;                                           //The number of degrees between the true heading and desired heading
+        double correction;                                      //Modifies power to account for error
+        double leftPower;                                       //Power being fed to left side of bot
+        double rightPower;                                      //Power being fed to right side of bot
+        double max;                                             //To be used to keep powers from exceeding 1
+        double heading = zRotation;
+        long loops = 0;
+        double deltaTime;
+        double derivativeTimeStamp = System.currentTimeMillis();
+        double derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
+        double coefP =.08;
+        double coefD = -.19;
+        double Dterm = 0;
+        double baseP =.19;
+        double power =baseP;
+        double fastPower = .4;
+        pos4();
+        /*while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+            updateDriveMotors(power, power, power, power);
+            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
+            callingOpMode.telemetry.update();
+            Thread.sleep(5);
+        }*/
+        double distLast = distSensor.getDistance(DistanceUnit.INCH);
+        double timeLast = System.currentTimeMillis();
+        while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+            angleError = heading - zRotation;
+            while (angleError > 180) angleError = (angleError - 360);
+            while (angleError <= -180) angleError = (angleError + 360);
+
+            correction = Range.clip(angleError * P_DRIVE_COEFF, -1, 1);
+
+            deltaTime = timeLast - System.currentTimeMillis();
+            callingOpMode.telemetry.addData("delta time:", deltaTime);
+            if(System.currentTimeMillis() - derivativeTimeStamp > 50) {
+                Dterm = (derivativeDistStamp - distSensor.getDistance(DistanceUnit.INCH))/(System.currentTimeMillis() - derivativeTimeStamp);
+                derivativeTimeStamp = System.currentTimeMillis();
+                derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
+            }
+            power = distSensor.getDistance(DistanceUnit.INCH) * coefP + Dterm * coefD;
+            callingOpMode.telemetry.addData("DDD:", Dterm + coefD);
+            timeLast = System.currentTimeMillis();
+            leftPower = power - correction;
+            rightPower = power + correction;
+
+            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
+            if (max > 1.0) {
+                leftPower /= max;
+                rightPower /= max;
+            }
+            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
+            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
+            callingOpMode.telemetry.update();
+            Thread.sleep(5);
+        }
+        stopAndReset();
+        pos5();
+        pos3();
     }
 
     public void driveStraightTime(long millis, float heading, double power)  throws InterruptedException {
