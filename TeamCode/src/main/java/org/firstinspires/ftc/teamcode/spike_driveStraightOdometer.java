@@ -11,7 +11,10 @@ public class spike_driveStraightOdometer extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         RobotBaseM1 rb = new RobotBaseM1(this);
         waitForStart();
-        rb.driveStraightOdometerSpike(24, 0, 0.6);
-        rb.stopAndReset();
+        rb.driveStraightOdometerSpike(70, 0, 0.9);
+        rb.stop();
+        telemetry.addData("e", rb.getEncoderWheelPosition());
+        telemetry.update();
+        sleep(10000);
     }
 }

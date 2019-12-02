@@ -23,14 +23,14 @@ public class RobotBaseM1 implements SensorEventListener {
     OpMode callingOpMode;
 
     private double ticksPerRotation = 488;
-    private double ticksPerRotationTetrix = 1440;
+    private double ticksPerRotationTetrix = 1400;
 
     private double wheelDiameter = 4;
 
     double ticksPerInch = ((ticksPerRotation)/(wheelDiameter * Math.PI));
     double ticksPerInchTetrix = ((ticksPerRotationTetrix)/(3 * Math.PI));
 
-    protected static final double P_DRIVE_COEFF = 0.02;
+    protected static final double P_DRIVE_COEFF = 0.042;
 
     static final double driveSpeed = 0.9;
 
@@ -140,6 +140,15 @@ public class RobotBaseM1 implements SensorEventListener {
         Thread.sleep(10);
     }
 
+    public void stop() throws InterruptedException {
+
+        frontRight.setPower(0);
+        backRight.setPower(0);
+        frontLeft.setPower(0);
+        backLeft.setPower(0);
+        Thread.sleep(200);
+    }
+
     public void setEncoderBase(){
         frontRightBaseEncoder = frontRight.getCurrentPosition();
         frontLeftBaseEncoder = frontLeft.getCurrentPosition();
@@ -213,30 +222,63 @@ public class RobotBaseM1 implements SensorEventListener {
         }
     }
 
-    public void driveStraightOdometerSpike(double inches, float heading, double power)  throws InterruptedException {
+    public void driveStraightOdometerSpike(double inches, float heading, double speedLimit)  throws InterruptedException {
         double error;                                           //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double leftPower;                                       //Power being fed to left side of bot
         double rightPower;                                      //Power being fed to right side of bot
         double max;                                             //To be used to keep powers from exceeding 1
+        double P_COEFF = 0.002;
+        double D_COEFF = 0.00042;
+        double power;
+        double deltaT;
+        double derivative = 0;
+        int deltaD;
+        int lastEncoder;
+        int distance;
         long loops = 0;
         heading = (int) normalize360(heading);
 
         setEncoderBase();
+        lastEncoder = encoderWheelBaseEncoder;
 
         int target = (int) (inches * ticksPerInchTetrix);
 
-        power = Range.clip(power, -1.0, 1.0);
+        speedLimit = Range.clip(speedLimit, -1.0, 1.0);
 
+        if (speedLimit==0){
+            return;
+        }
 
-        while (Math.abs(target) > Math.abs(getEncoderWheelPosition())  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+        double lastTime = callingOpMode.getRuntime();
+
+        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelPosition())))
+                || (loops==0 || Math.abs(derivative)<80)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
             error = heading - zRotation;
+
+            distance = Math.abs(target) - Math.abs(getEncoderWheelPosition());
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
 
             correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
+
+            deltaT = callingOpMode.getRuntime()-lastTime;
+            lastTime = callingOpMode.getRuntime();
+            deltaD = getEncoderWheelPosition()-lastEncoder;
+            lastEncoder = getEncoderWheelPosition();
+
+            derivative = ((double) deltaD)/deltaT;
+
+            power = (distance*P_COEFF) - (derivative*D_COEFF);
+
+            if (Math.abs(power) > Math.abs(speedLimit)) {
+                power /= Math.abs(power);
+                power *= Math.abs(speedLimit);
+            }
+
+            power *= (speedLimit/Math.abs(speedLimit));
 
             leftPower = power - correction;
             rightPower = power + correction;
@@ -246,18 +288,23 @@ public class RobotBaseM1 implements SensorEventListener {
                 leftPower /= max;
                 rightPower /= max;
             }
+
             updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
 
             if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
                 callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
                 callingOpMode.telemetry.addData("loops", loops);
+                callingOpMode.telemetry.addData("deltaD", deltaD);
+                callingOpMode.telemetry.addData("deltaT", deltaT);
+                callingOpMode.telemetry.addData("distance", distance);
+                callingOpMode.telemetry.addData("derivative", derivative);
                 callingOpMode.telemetry.update();
             }
 
             loops++;
 
-            Thread.yield();
+            ((LinearOpMode) callingOpMode).sleep(10);
         }
     }
 
