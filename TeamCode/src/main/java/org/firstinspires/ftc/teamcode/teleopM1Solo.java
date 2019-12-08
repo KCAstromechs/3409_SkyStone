@@ -10,7 +10,7 @@ public class teleopM1Solo extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft, lift, flip, intakeRight, intakeLeft;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, lift, flip, encoderWheel, encoderWheelHorizontal;
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
     private int turbo = 3;
     private int flopPos = 0;
@@ -24,43 +24,41 @@ public class teleopM1Solo extends OpMode {
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
+        encoderWheel = hardwareMap.dcMotor.get("encoderWheel");
+        encoderWheelHorizontal = hardwareMap.dcMotor.get("encoderWheelHorizontal");
         lift = hardwareMap.dcMotor.get("lift");
         flip = hardwareMap.dcMotor.get("flip");
-        intakeRight = hardwareMap.dcMotor.get("intakeRight");
-        intakeLeft = hardwareMap.dcMotor.get("intakeLeft");
 
-        foundLeft = hardwareMap.servo.get("foundationLeft");
+        foundLeft  = hardwareMap.servo.get("foundationLeft");
         foundRight = hardwareMap.servo.get("foundationRight");
-        mainFlop = hardwareMap.servo.get("mainFlop");
-        subFlop = hardwareMap.servo.get("subFlop");
-        release = hardwareMap.servo.get("release");
+        mainFlop   = hardwareMap.servo.get("mainFlop");
+        subFlop    = hardwareMap.servo.get("subFlop");
+        release    = hardwareMap.servo.get("release");
+
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
+
 
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        intakeLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
 
         frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intakeRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        intakeLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         release.setPosition(0);
         foundRight.setPosition(0.75);
@@ -92,7 +90,7 @@ public class teleopM1Solo extends OpMode {
         frontLeft.setPower((frontLeftPower*turbo)/3);
         backLeft.setPower((backLeftPower*turbo)/3);
 
-        if(gamepad1.y && !yLast && flopPos == 0){
+        if(gamepad1.y && !yLast){
             if(y){
                 foundRight.setPosition(0.75);
                 foundLeft.setPosition(0);
@@ -105,17 +103,6 @@ public class teleopM1Solo extends OpMode {
             yLast = true;
         } else if (!gamepad1.y && yLast) {
             yLast = false;
-        }
-
-        if(gamepad2.a){
-            intakeLeft.setPower(1);
-            intakeRight.setPower(1);
-        } else if (gamepad2.b){
-            intakeLeft.setPower(-1);
-            intakeRight.setPower(-1);
-        } else {
-            intakeLeft.setPower(0);
-            intakeRight.setPower(0);
         }
 
         if(gamepad2.left_bumper && !l12Last){
@@ -162,7 +149,7 @@ public class teleopM1Solo extends OpMode {
             if(flopPos != 2){
                 flopPos ++;
                 if(subFlopLast==2){
-                    subFlop.setPosition(0.5);
+                    subFlop.setPosition(0.7);
                 }
             }
             y2Last = true;

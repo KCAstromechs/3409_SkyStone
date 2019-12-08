@@ -14,7 +14,7 @@ public class teleopM1 extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderMotor, lift, flip;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
     private DistanceSensor distSensor;
     private int turbo = 3;
@@ -29,15 +29,19 @@ public class teleopM1 extends OpMode {
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
-        encoderMotor = hardwareMap.dcMotor.get("encoderMotor");
+        encoderWheel = hardwareMap.dcMotor.get("encoderWheel");
+        encoderWheelHorizontal = hardwareMap.dcMotor.get("encoderWheelHorizontal");
         lift = hardwareMap.dcMotor.get("lift");
         flip = hardwareMap.dcMotor.get("flip");
 
-        foundLeft = hardwareMap.servo.get("foundationLeft");
+        foundLeft  = hardwareMap.servo.get("foundationLeft");
         foundRight = hardwareMap.servo.get("foundationRight");
-        mainFlop = hardwareMap.servo.get("mainFlop");
-        subFlop = hardwareMap.servo.get("subFlop");
-        release = hardwareMap.servo.get("release");
+        mainFlop   = hardwareMap.servo.get("mainFlop");
+        subFlop    = hardwareMap.servo.get("subFlop");
+        release    = hardwareMap.servo.get("release");
+
+        frontRight.setDirection(DcMotor.Direction.REVERSE);
+        backRight.setDirection(DcMotor.Direction.REVERSE);
 
         distSensor = hardwareMap.get(DistanceSensor.class, "distSensor");
 
@@ -45,7 +49,7 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -53,16 +57,14 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         release.setPosition(0);
         mainFlop.setPosition(0.7);
@@ -92,7 +94,7 @@ public class teleopM1 extends OpMode {
         frontLeft.setPower((frontLeftPower*turbo)/3);
         backLeft.setPower((backLeftPower*turbo)/3);
 
-        if(gamepad1.y && !yLast && flopPos == 0){
+        if(gamepad1.y && !yLast){
             if(y){
                 foundRight.setPosition(0.75);
                 foundLeft.setPosition(0);
@@ -142,7 +144,7 @@ public class teleopM1 extends OpMode {
             if(flopPos != 2){
                 flopPos ++;
                 if(flopPos == 1 && subFlopLast==2){
-                    subFlop.setPosition(0.5);
+                    subFlop.setPosition(0.7);
                 }
             }
             y2Last = true;
@@ -175,7 +177,7 @@ public class teleopM1 extends OpMode {
         telemetry.addData("lift", lift.getCurrentPosition());
         telemetry.addData("flip", flip.getCurrentPosition());
         telemetry.addData("range", String.format("%.01f in", distSensor.getDistance(DistanceUnit.INCH)));
-        telemetry.addData("odometer ticks:", encoderMotor.getCurrentPosition());
+        telemetry.addData("odometer ticks:", encoderWheel.getCurrentPosition());
         telemetry.update();
     }
 
