@@ -4,19 +4,20 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import static android.content.Context.SENSOR_SERVICE;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
-import com.qualcomm.robotcore.hardware.DistanceSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+import static android.content.Context.SENSOR_SERVICE;
+
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
-public class RobotBaseM1 implements SensorEventListener {
+public class RobotBaseGabriel implements SensorEventListener {
 
     DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
 
@@ -58,7 +59,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
     int pos = 1;
 
-    public RobotBaseM1 (OpMode _callingOpMode) {
+    public RobotBaseGabriel(OpMode _callingOpMode) {
         callingOpMode = _callingOpMode;
 
         frontRight = callingOpMode.hardwareMap.dcMotor.get("frontRight");
@@ -104,8 +105,8 @@ public class RobotBaseM1 implements SensorEventListener {
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         release.setPosition(0);
-        foundRight.setPosition(0.75);
-        foundLeft.setPosition(0);
+        foundRight.setPosition(0);
+        foundLeft.setPosition(0.75);
         mainFlop.setPosition(0.7);
         subFlop.setPosition(0.35);
 
@@ -180,55 +181,7 @@ public class RobotBaseM1 implements SensorEventListener {
 
     public void driveStraight(double inches, float heading) throws InterruptedException { driveStraight(inches, heading, driveSpeed); }
 
-    public void driveStraight(double inches, float heading, double power)  throws InterruptedException {
-        double error;                                           //The number of degrees between the true heading and desired heading
-        double correction;                                      //Modifies power to account for error
-        double leftPower;                                       //Power being fed to left side of bot
-        double rightPower;                                      //Power being fed to right side of bot
-        double max;                                             //To be used to keep powers from exceeding 1
-        long loops = 0;
-        heading = (int) normalize360(heading);
-
-        setEncoderBase();
-
-        int target = (int) (inches * ticksPerInch);
-
-        power = Range.clip(power, -1.0, 1.0);
-
-
-        while (Math.abs(target) > Math.abs(getCurrentAveragePosition())  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-
-            error = heading - zRotation;
-
-            while (error > 180) error = (error - 360);
-            while (error <= -180) error = (error + 360);
-
-            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
-
-            leftPower = power - correction;
-            rightPower = power + correction;
-
-            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
-            if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
-            }
-            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
-
-            if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.update();
-            }
-
-            loops++;
-
-            Thread.yield();
-        }
-    }
-
-    public void driveStraightOdometerSpike(double inches, float heading, double speedLimit)  throws InterruptedException {
+    public void driveStraight(double inches, float heading, double speedLimit)  throws InterruptedException {
         double error;                                           //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double leftPower;                                       //Power being fed to left side of bot
@@ -236,6 +189,10 @@ public class RobotBaseM1 implements SensorEventListener {
         double max;                                             //To be used to keep powers from exceeding 1
         double P_COEFF = 0.002;
         double D_COEFF = 0.00042;
+        if(inches<24){
+            P_COEFF = 0.0015;
+            D_COEFF = 0.00022;
+        }
         double power;
         double deltaT;
         double derivative = 0;
@@ -315,7 +272,7 @@ public class RobotBaseM1 implements SensorEventListener {
     }
 
     public void yeetBlock() throws InterruptedException{
-        double angleError, linearError;                          //The number of degrees between the true heading and desired heading
+        double angleError, linearError;                                           //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double leftPower;                                       //Power being fed to left side of bot
         double rightPower;                                      //Power being fed to right side of bot
@@ -673,14 +630,14 @@ public class RobotBaseM1 implements SensorEventListener {
     }
 
     public void grabFoundation () throws InterruptedException {
-        foundRight.setPosition(0);
-        foundLeft.setPosition(0.75);
+        foundRight.setPosition(0.75);
+        foundLeft.setPosition(0);
         Thread.sleep(1100);
     }
 
     public void releaseFoundation () throws InterruptedException {
-        foundRight.setPosition(0.75);
-        foundLeft.setPosition(0);
+        foundRight.setPosition(0);
+        foundLeft.setPosition(0.75);
     }
 
     public void mainFlopDown () throws InterruptedException {
@@ -736,7 +693,7 @@ public class RobotBaseM1 implements SensorEventListener {
     public void pos3 () throws InterruptedException {
         pos = 3;
         mainFlop.setPosition(0.15);
-        subFlop.setPosition(0.35);
+        subFlop.setPosition(0.30);
         Thread.sleep(400);
     }
 
@@ -750,7 +707,7 @@ public class RobotBaseM1 implements SensorEventListener {
     public void pos5 () throws InterruptedException {
         pos = 5;
         mainFlop.setPosition(0);
-        subFlop.setPosition(0.35);
+        subFlop.setPosition(0.30);
         Thread.sleep(400);
     }
 
