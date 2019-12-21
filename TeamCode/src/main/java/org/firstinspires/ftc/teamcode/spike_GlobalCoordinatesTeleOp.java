@@ -5,34 +5,32 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.Servo;
 
 import static android.content.Context.SENSOR_SERVICE;
 
-@Disabled
-@TeleOp(name="LilJenkTeleOp")
-public class LilJenkTeleOp extends OpMode implements SensorEventListener {
+@TeleOp(name="spike_GlobalCoordinatesTeleOp")
+public class spike_GlobalCoordinatesTeleOp extends OpMode implements SensorEventListener {
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal;
     private double error = 0;
     private int turbo = 9;
     private double globalX = 0;
     private double globalY = 0;
-    private double deltaPos = 0;
+    private double deltaPosForwards = 0;
+    private double deltaPosSideways = 0;
     private double deltaX = 0;
     private double deltaY = 0;
     private double loopsPerCalc = 0;
     private double lastPos = 0;
     private double currentPos = 0;
-    private double lastLeftPos = 0;
-    private double lastRightPos = 0;
-    private final double loopsPerAccumulate = 2;
-    private int i = 0;
+    private double lastForwardPos = 0;
+    private double lastSidewaysPos = 0;
+    private final double loopsPerAccumulate = 1;
+    private int i;
 
     float zRotation;
 
@@ -57,7 +55,7 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
     private double grabbyOpen = 0.5;
     private double grabbyClosed = 1;
 
-
+    double accumulationTimeStamp;
 
     @Override
     public void init() {
@@ -65,11 +63,17 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
         mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
         mSensorManager.registerListener(this, mRotationVectorSensor, 10000);
 
-
         frontRight = hardwareMap.dcMotor.get("frontRight");
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
+        encoderWheel = hardwareMap.dcMotor.get("encoderWheelY");
+        encoderWheelHorizontal = hardwareMap.dcMotor.get("encoderWheelX");
+
+        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -81,22 +85,53 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
 
         hasBeenZeroed = false;
 
+        accumulationTimeStamp = System.currentTimeMillis();
+
+        i = 0;
     }
+    double y1, y2, x1, x2;
+    double theta;
+    double posF, posS;
     @Override
     public void loop() {
         turbo = 9;        //average displacement of drivetrain since last loop
         if(i % loopsPerAccumulate == 0) {
-            deltaPos = (Math.abs(frontRight.getCurrentPosition() - lastRightPos) + Math.abs(frontLeft.getCurrentPosition() - lastLeftPos))/2;
+            telemetry.addData("ms per loop", System.currentTimeMillis() - accumulationTimeStamp);
+            accumulationTimeStamp = System.currentTimeMillis();
 
-            globalX += ticksToInches(deltaPos * Math.cos(zRotation));
-            globalY += ticksToInches(deltaPos * Math.sin(zRotation));
+            posF = encoderWheel.getCurrentPosition();
+            posS = -encoderWheelHorizontal.getCurrentPosition();
 
-            lastLeftPos = frontLeft.getCurrentPosition();
-            lastRightPos = frontRight.getCurrentPosition();
+            deltaPosForwards = (posF - lastForwardPos);
+            deltaPosSideways = (posS - lastSidewaysPos);
+
+            lastForwardPos = posF;
+            lastSidewaysPos = posS;
+
+            telemetry.addData("deltaPosForwards", deltaPosForwards);
+            telemetry.addData("deltaPosSideways", deltaPosSideways);
+
+            theta = zRotation * Math.PI / 180.0;
+            y1 = deltaPosForwards * Math.cos(theta);
+            y2 = -deltaPosSideways * Math.sin(theta);
+            x1 = deltaPosForwards * Math.sin(theta);
+            x2 = deltaPosSideways * Math.cos(theta);
+
+            telemetry.addData("radians", theta);
+            telemetry.addData("degrees", zRotation);
+
+            globalY += ticksToInches(y1 + y2);
+            globalX += ticksToInches(x1 + x2);
+
+            telemetry.addData("globalY", globalY);
+            telemetry.addData("globalX", globalX);
+
+            telemetry.addData("forwardsPos", lastForwardPos);
+            telemetry.addData("sidewaysPos", lastSidewaysPos);
         }
         i++;
-        left = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : -1 * gamepad1.left_stick_y;
-        right = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : -1 * gamepad1.right_stick_y;
+        right = (Math.abs(gamepad1.left_stick_y) < 0.05) ? 0 : gamepad1.left_stick_y;
+        left = (Math.abs(gamepad1.right_stick_y) < 0.05) ? 0 : gamepad1.right_stick_y;
         leftT = (Math.abs(gamepad1.left_trigger) < 0.05) ? 0 : gamepad1.left_trigger;
         rightT = (Math.abs(gamepad1.right_trigger) < 0.05) ? 0 : gamepad1.right_trigger;
 
@@ -112,20 +147,11 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
         frontLeft.setPower((frontLeftPower*turbo)/10);
         backLeft.setPower((backLeftPower*turbo)/10);
 
-//        telemetry.addData("error", error);
-//        telemetry.addData("up", gamepad1.dpad_up);
-//        telemetry.addData("down", gamepad1.dpad_down);
-        telemetry.addData("X: ", globalX);
-        telemetry.addData("Y: ", globalY);
-        telemetry.addData("Theta: ", zRotation);
-        telemetry.addData("leftPos", lastLeftPos);
-        telemetry.addData("rightPos", lastRightPos);
-
         telemetry.update();
     }
 
     public double ticksToInches(double x) {
-        return 4 * Math.PI * x/488;
+        return 3 * Math.PI * x/1400; //x/(1400/3*pi)
     }
 
     private void reducePowers(float power) {
@@ -137,8 +163,6 @@ public class LilJenkTeleOp extends OpMode implements SensorEventListener {
             frontLeftPower *= multiplier;
             frontRightPower *= multiplier;
             backLeftPower *= multiplier;
-
-
             backRightPower *= multiplier;
         }
     }
