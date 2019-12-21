@@ -1,10 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
+@Disabled
 @TeleOp(name="teleop m1 solo")
 public class teleopM1Solo extends OpMode {
 
@@ -16,6 +18,8 @@ public class teleopM1Solo extends OpMode {
     private int flopPos = 0;
     private boolean y, yLast, l12, l12Last, y2Last, x2Last, r12, r12Last = false;
     private int subFlopLast = 1;
+
+    double ticksPerInchTetrix = ((1400)/(3 * Math.PI));
 
 
     @Override
@@ -44,6 +48,7 @@ public class teleopM1Solo extends OpMode {
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -52,6 +57,7 @@ public class teleopM1Solo extends OpMode {
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -180,6 +186,9 @@ public class teleopM1Solo extends OpMode {
 
         telemetry.addData("lift", lift.getCurrentPosition());
         telemetry.addData("flip", flip.getCurrentPosition());
+        telemetry.addData("odometer", encoderWheel.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.addData("odometer horizontal", encoderWheelHorizontal.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.update();
     }
 
     private void reducePowers(float power) {

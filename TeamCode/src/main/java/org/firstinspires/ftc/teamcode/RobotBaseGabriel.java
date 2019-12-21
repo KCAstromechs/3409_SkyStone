@@ -14,12 +14,14 @@ import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
+import javax.crypto.Mac;
+
 import static android.content.Context.SENSOR_SERVICE;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
 public class RobotBaseGabriel implements SensorEventListener {
 
-    DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
+    DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, lift, flip;
 
     Servo foundRight, foundLeft, mainFlop, subFlop, release;
 
@@ -37,7 +39,7 @@ public class RobotBaseGabriel implements SensorEventListener {
 
     static final double driveSpeed = 0.9;
 
-    int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelBaseEncoder, encoderWheelHorizontalBaseEncoder, backLeftBaseEncoder = 0;
+    int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelYBaseEncoder, encoderWheelXBaseEncoder, backLeftBaseEncoder = 0;
 
 
     private DistanceSensor distSensor;
@@ -66,8 +68,8 @@ public class RobotBaseGabriel implements SensorEventListener {
         frontLeft = callingOpMode.hardwareMap.dcMotor.get("frontLeft");
         backRight = callingOpMode.hardwareMap.dcMotor.get("backRight");
         backLeft = callingOpMode.hardwareMap.dcMotor.get("backLeft");
-        encoderWheel = callingOpMode.hardwareMap.dcMotor.get("encoderWheel");
-        encoderWheelHorizontal = callingOpMode.hardwareMap.dcMotor.get("encoderWheelHorizontal");
+        encoderWheelY = callingOpMode.hardwareMap.dcMotor.get("encoderWheelY");
+        encoderWheelX = callingOpMode.hardwareMap.dcMotor.get("encoderWheelX");
         lift = callingOpMode.hardwareMap.dcMotor.get("lift");
         flip = callingOpMode.hardwareMap.dcMotor.get("flip");
 
@@ -87,7 +89,8 @@ public class RobotBaseGabriel implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -95,7 +98,8 @@ public class RobotBaseGabriel implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -134,15 +138,15 @@ public class RobotBaseGabriel implements SensorEventListener {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         Thread.sleep(10);
     }
@@ -161,8 +165,8 @@ public class RobotBaseGabriel implements SensorEventListener {
         frontLeftBaseEncoder = frontLeft.getCurrentPosition();
         backRightBaseEncoder = backRight.getCurrentPosition();
         backLeftBaseEncoder = backLeft.getCurrentPosition();
-        encoderWheelBaseEncoder = encoderWheel.getCurrentPosition();
-        encoderWheelHorizontalBaseEncoder = encoderWheel.getCurrentPosition();
+        encoderWheelYBaseEncoder = encoderWheelY.getCurrentPosition();
+        encoderWheelXBaseEncoder = encoderWheelY.getCurrentPosition();
     }
 
     public int getCurrentFrontRightPosition() {return Math.abs(frontRight.getCurrentPosition()-frontRightBaseEncoder);}
@@ -175,9 +179,11 @@ public class RobotBaseGabriel implements SensorEventListener {
 
     public int getCurrentAveragePosition() {return Math.abs((getCurrentBackLeftPosition()+getCurrentBackRightPosition()+getCurrentFrontRightPosition())/3);} //frontLeft is MIA
 
-    public int getEncoderWheelPosition() {return Math.abs(encoderWheel.getCurrentPosition()-encoderWheelBaseEncoder);}
+    public int getEncoderWheelYPosition() {return Math.abs(encoderWheelY.getCurrentPosition()-encoderWheelYBaseEncoder);}
 
-    public int getEncoderWheelHorizontalPosition() {return Math.abs(encoderWheelHorizontal.getCurrentPosition()-encoderWheelHorizontalBaseEncoder);}
+    public int getEncoderWheelXPosition() {return Math.abs(encoderWheelX.getCurrentPosition()-encoderWheelXBaseEncoder);}
+
+    public double getDistSensorInch() {return distSensor.getDistance(DistanceUnit.INCH);}
 
     public void driveStraight(double inches, float heading) throws InterruptedException { driveStraight(inches, heading, driveSpeed); }
 
@@ -187,15 +193,18 @@ public class RobotBaseGabriel implements SensorEventListener {
         double leftPower;                                       //Power being fed to left side of bot
         double rightPower;                                      //Power being fed to right side of bot
         double max;                                             //To be used to keep powers from exceeding 1
-        double P_COEFF = 0.002;
-        double D_COEFF = 0.00042;
+        double P_COEFF = 0.0012;      //0.002
+        double I_COEFF = 0.00192;     //0.0035
+        double D_COEFF = 0.0003;    //0.00042
         if(inches<24){
             P_COEFF = 0.0015;
-            D_COEFF = 0.00022;
+            I_COEFF = 0.00192;
+            D_COEFF = 0.0003;
         }
         double power;
         double deltaT;
         double derivative = 0;
+        double integral = 0;
         int deltaD;
         int lastEncoder;
         int distance;
@@ -203,7 +212,7 @@ public class RobotBaseGabriel implements SensorEventListener {
         heading = (int) normalize360(heading);
 
         setEncoderBase();
-        lastEncoder = encoderWheelBaseEncoder;
+        lastEncoder = encoderWheelYBaseEncoder;
 
         int target = (int) (inches * ticksPerInchTetrix);
 
@@ -215,12 +224,12 @@ public class RobotBaseGabriel implements SensorEventListener {
 
         double lastTime = callingOpMode.getRuntime();
 
-        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelPosition())))
-                || (loops==0 || Math.abs(derivative)<80)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelYPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelYPosition())))
+                || (loops==0 || Math.abs(derivative)<1)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
             error = heading - zRotation;
 
-            distance = Math.abs(target) - Math.abs(getEncoderWheelPosition());
+            distance = Math.abs(target) - Math.abs(getEncoderWheelYPosition());
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
@@ -229,12 +238,18 @@ public class RobotBaseGabriel implements SensorEventListener {
 
             deltaT = callingOpMode.getRuntime()-lastTime;
             lastTime = callingOpMode.getRuntime();
-            deltaD = getEncoderWheelPosition()-lastEncoder;
-            lastEncoder = getEncoderWheelPosition();
+            deltaD = getEncoderWheelYPosition()-lastEncoder;
+            lastEncoder = getEncoderWheelYPosition();
 
             derivative = ((double) deltaD)/deltaT;
 
-            power = (distance*P_COEFF) - (derivative*D_COEFF);
+            if(Math.abs(distance*P_COEFF)<1){
+                integral += distance*deltaT;
+            } else {
+                integral = 0;
+            }
+
+            power = (distance*P_COEFF) + (integral*I_COEFF) - (derivative*D_COEFF);
 
             if (Math.abs(power) > Math.abs(speedLimit)) {
                 power /= Math.abs(power);
@@ -256,12 +271,160 @@ public class RobotBaseGabriel implements SensorEventListener {
 
             if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getEncoderWheelPosition());
+                callingOpMode.telemetry.addData("encoder" , getEncoderWheelYPosition());
                 callingOpMode.telemetry.addData("loops", loops);
                 callingOpMode.telemetry.addData("deltaD", deltaD);
                 callingOpMode.telemetry.addData("deltaT", deltaT);
                 callingOpMode.telemetry.addData("distance", distance);
                 callingOpMode.telemetry.addData("derivative", derivative);
+                callingOpMode.telemetry.update();
+            }
+
+            loops++;
+
+            ((LinearOpMode) callingOpMode).sleep(10);
+        }
+    }
+
+    public void driveStraight(double deltaY, double deltaX, float heading, double speedLimit)  throws InterruptedException { //TODO test this
+        double error;                                           //The number of degrees between the true heading and desired heading
+        double correction;                                      //Modifies power to account for error
+        double max;                                             //To be used to keep powers from exceeding 1
+        double P_COEFF = 0.0012;      //0.002
+        double I_COEFF = 0.00192;     //0.0035
+        double D_COEFF = 0.0003;    //0.00042
+        if(Math.sqrt((deltaX*deltaX) + (deltaY*deltaY))<24){
+            P_COEFF = 0.0015;
+            I_COEFF = 0.00192;
+            D_COEFF = 0.0003;
+        }
+        double power;
+        double deltaT;
+        double derivativeY = 0;
+        double derivativeX = 0;
+        double integralY = 0;
+        double integralX = 0;
+        int deltaDY;
+        int deltaDX;
+        int lastEncoderY;
+        int lastEncoderX;
+        int distanceY;
+        int distanceX;
+        long loops = 0;
+        heading = (int) normalize360(heading);
+
+        double frontLeft;
+        double frontRight;
+        double backLeft;
+        double backRight;
+
+        setEncoderBase();
+        lastEncoderY = encoderWheelYBaseEncoder;
+        lastEncoderX = encoderWheelXBaseEncoder;
+
+        int targetY = (int) (deltaY * ticksPerInchTetrix);
+        int targetX = (int) (deltaX * ticksPerInchTetrix);
+
+        speedLimit = Range.clip(speedLimit, 0.0, 1.0);
+
+        if (speedLimit==0){
+            return;
+        }
+
+        double lastTime = callingOpMode.getRuntime();
+
+        while (((((Math.abs(targetY)-50) > Math.abs(getEncoderWheelYPosition()) || ((Math.abs(targetY)+50) < Math.abs(getEncoderWheelYPosition()))) ||
+                ((Math.abs(targetX)-50) > Math.abs(getEncoderWheelXPosition()) || ((Math.abs(targetX)+50) < Math.abs(getEncoderWheelXPosition())))) ||
+                (loops==0 || Math.abs(derivativeY)<1 || Math.abs(derivativeX)<1)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+
+            error = heading - zRotation;
+
+            distanceY = Math.abs(targetY) - Math.abs(getEncoderWheelYPosition());
+            distanceX = Math.abs(targetX) - Math.abs(getEncoderWheelXPosition());
+
+            while (error > 180) error = (error - 360);
+            while (error <= -180) error = (error + 360);
+
+            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
+
+            deltaT = callingOpMode.getRuntime()-lastTime;
+            lastTime = callingOpMode.getRuntime();
+            deltaDY = getEncoderWheelYPosition()-lastEncoderY;
+            lastEncoderY = getEncoderWheelYPosition();
+            deltaDX = getEncoderWheelXPosition()-lastEncoderX;
+            lastEncoderX = getEncoderWheelXPosition();
+
+            derivativeY = ((double) deltaDY)/deltaT;
+            derivativeX = ((double) deltaDX)/deltaT;
+
+            if(Math.abs(distanceY*P_COEFF)<1){
+                integralY += distanceY*deltaT;
+            } else {
+                integralY = 0;
+            }
+            if(Math.abs(distanceX*P_COEFF)<1){
+                integralX += distanceX*deltaT;
+            } else {
+                integralX = 0;
+            }
+
+            power = (distanceY*P_COEFF) + (integralY*I_COEFF) - (derivativeY*D_COEFF);
+
+            power *= (deltaY/Math.abs(deltaY));
+
+            frontLeft = power;
+            frontRight = power;
+            backLeft = power;
+            backRight = power;
+
+            power = (distanceX*P_COEFF) + (integralX*I_COEFF) - (derivativeX*D_COEFF);
+
+            power *= (deltaX/Math.abs(deltaX));
+
+            frontLeft -= power;
+            frontRight += power;
+            backLeft += power;
+            backRight -= power;
+
+            max = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)), Math.max(Math.abs(backLeft), Math.abs(backRight)));
+            if (max > Math.abs(speedLimit)) {
+                frontLeft /= max;
+                frontRight /= max;
+                backLeft /= max;
+                backRight /= max;
+                frontLeft *= Math.abs(speedLimit);
+                frontRight *= Math.abs(speedLimit);
+                backLeft *= Math.abs(speedLimit);
+                backRight *= Math.abs(speedLimit);
+            }
+
+            frontLeft -= correction;
+            frontRight += correction;
+            backLeft -= correction;
+            backRight += correction;
+
+            max = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)), Math.max(Math.abs(backLeft), Math.abs(backRight)));
+            if (max > 1.0) {
+                frontLeft /= max;
+                frontRight /= max;
+                backLeft /= max;
+                backRight /= max;
+            }
+
+            updateDriveMotors(frontLeft, frontRight, backLeft, backRight);
+
+            if (((loops+10) % 10) ==  0) {
+                callingOpMode.telemetry.addData("gyro" , zRotation);
+                callingOpMode.telemetry.addData("encoderY" , getEncoderWheelYPosition());
+                callingOpMode.telemetry.addData("encoderX" , getEncoderWheelXPosition());
+                callingOpMode.telemetry.addData("loops", loops);
+                callingOpMode.telemetry.addData("deltaDY", deltaDY);
+                callingOpMode.telemetry.addData("deltaDX", deltaDX);
+                callingOpMode.telemetry.addData("deltaT", deltaT);
+                callingOpMode.telemetry.addData("distanceY", distanceY);
+                callingOpMode.telemetry.addData("distanceX", distanceX);
+                callingOpMode.telemetry.addData("derivativeY", derivativeY);
+                callingOpMode.telemetry.addData("derivativeX", derivativeX);
                 callingOpMode.telemetry.update();
             }
 
@@ -466,29 +629,77 @@ public class RobotBaseGabriel implements SensorEventListener {
         }
     }
 
-    public void strafe(double inches, float heading, double power)  throws InterruptedException {
+    public void strafe(double inches, float heading, double speedLimit)  throws InterruptedException {   //positive speedLimit == right; negative speedLimit == left
+
         double error;                                           //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double frontPower;                                       //Power being fed to front side of bot
         double backPower;                                      //Power being fed to back side of bot
         double max;                                             //To be used to keep powers from exceeding 1
+        double P_COEFF = 0.0012;      //0.002
+        double I_COEFF = 0.00192;     //0.0035
+        double D_COEFF = 0.0003;    //0.00042
+        if(inches<24){
+            P_COEFF = 0.0015;
+            I_COEFF = 0.00192;
+            D_COEFF = 0.0003;
+        }
+        double power;
+        double deltaT;
+        double derivative = 0;
+        double integral = 0;
+        int deltaD;
+        int lastEncoder;
+        int distance;
         long loops = 0;
         heading = (int) normalize360(heading);
 
-        int target = (int) (inches * ticksPerInch);
-
-        power = Range.clip(power, -1.0, 1.0);
-
         setEncoderBase();
+        lastEncoder = encoderWheelXBaseEncoder;
 
-        while (Math.abs(target) > getCurrentAveragePosition()  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
+        int target = (int) (inches * ticksPerInchTetrix);
+
+        speedLimit = Range.clip(speedLimit, -1.0, 1.0);
+
+        if (speedLimit==0){
+            return;
+        }
+
+        double lastTime = callingOpMode.getRuntime();
+
+        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelXPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelXPosition())))
+                || (loops==0 || Math.abs(derivative)<1)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
             error = heading - zRotation;
+
+            distance = Math.abs(target) - Math.abs(getEncoderWheelXPosition());
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
 
             correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
+
+            deltaT = callingOpMode.getRuntime()-lastTime;
+            lastTime = callingOpMode.getRuntime();
+            deltaD = getEncoderWheelXPosition()-lastEncoder;
+            lastEncoder = getEncoderWheelXPosition();
+
+            derivative = ((double) deltaD)/deltaT;
+
+            if(Math.abs(distance*P_COEFF)<1){
+                integral += distance*deltaT;
+            } else {
+                integral = 0;
+            }
+
+            power = (distance*P_COEFF) + (integral*I_COEFF) - (derivative*D_COEFF);
+
+            if (Math.abs(power) > Math.abs(speedLimit)) {
+                power /= Math.abs(power);
+                power *= Math.abs(speedLimit);
+            }
+
+            power *= (speedLimit/Math.abs(speedLimit));
 
             frontPower = power + correction;
             backPower = power - correction;
@@ -499,18 +710,22 @@ public class RobotBaseGabriel implements SensorEventListener {
                 frontPower /= max;
             }
 
-            if ((loops % 10) ==  0) {
+            updateDriveMotors(-frontPower, frontPower, backPower, -backPower);
+
+            if (((loops+10) % 10) ==  0) {
                 callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
+                callingOpMode.telemetry.addData("encoder" , getEncoderWheelXPosition());
                 callingOpMode.telemetry.addData("loops", loops);
+                callingOpMode.telemetry.addData("deltaD", deltaD);
+                callingOpMode.telemetry.addData("deltaT", deltaT);
+                callingOpMode.telemetry.addData("distance", distance);
+                callingOpMode.telemetry.addData("derivative", derivative);
                 callingOpMode.telemetry.update();
             }
 
-            updateDriveMotors(-frontPower, frontPower, backPower, -backPower);
-
             loops++;
 
-            Thread.yield();
+            ((LinearOpMode) callingOpMode).sleep(10);
         }
     }
 

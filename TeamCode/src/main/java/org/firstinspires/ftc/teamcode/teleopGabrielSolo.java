@@ -1,22 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.OpticalDistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@Disabled
-@TeleOp(name="teleop m1")
-public class teleopM1 extends OpMode {
+@TeleOp(name="teleop gabe solo")
+public class teleopGabrielSolo extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, lift, flip, encoderWheelY, encoderWheelX;
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
     private DistanceSensor distSensor;
     private int turbo = 3;
@@ -33,8 +30,8 @@ public class teleopM1 extends OpMode {
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
-        encoderWheel = hardwareMap.dcMotor.get("encoderWheel");
-        encoderWheelHorizontal = hardwareMap.dcMotor.get("encoderWheelHorizontal");
+        encoderWheelY = hardwareMap.dcMotor.get("encoderWheelY");
+        encoderWheelX = hardwareMap.dcMotor.get("encoderWheelX");
         lift = hardwareMap.dcMotor.get("lift");
         flip = hardwareMap.dcMotor.get("flip");
 
@@ -53,8 +50,8 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -62,8 +59,8 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -73,6 +70,8 @@ public class teleopM1 extends OpMode {
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         release.setPosition(0);
+        foundRight.setPosition(0.75);
+        foundLeft.setPosition(0);
         mainFlop.setPosition(0.7);
         subFlop.setPosition(0.35);
     }
@@ -93,7 +92,7 @@ public class teleopM1 extends OpMode {
 
         reducePowers(Math.max(frontLeftPower, Math.max(backLeftPower, Math.max(frontRightPower, backRightPower))));
 
-        if (gamepad1.right_bumper || gamepad1.left_bumper) turbo ++;
+        if (gamepad1.left_bumper) turbo ++;
 
         frontRight.setPower((frontRightPower*turbo)/3);
         backRight.setPower((backRightPower*turbo)/3);
@@ -114,6 +113,7 @@ public class teleopM1 extends OpMode {
         } else if (!gamepad1.y && yLast) {
             yLast = false;
         }
+
         if(gamepad2.left_bumper && !l12Last){
             if(l12){
                 release.setPosition(0);
@@ -129,9 +129,17 @@ public class teleopM1 extends OpMode {
 
         flip.setPower(gamepad2.right_stick_y);
 
-        lift.setPower(-gamepad2.left_stick_y);
+        lift.setPower(gamepad2.left_stick_y);
 
-        if(gamepad2.right_bumper && !r12Last && flopPos!=0){
+        if (gamepad1.dpad_up){
+            lift.setPower(1);
+        } else if (gamepad1.dpad_down) {
+            lift.setPower(-1);
+        } else {
+            lift.setPower(0);
+        }
+
+        if(gamepad1.right_bumper && !r12Last && flopPos!=0){
             if(r12){
                 subFlop.setPosition(0.35);
                 subFlopLast = 1;
@@ -142,28 +150,28 @@ public class teleopM1 extends OpMode {
                 r12 = true;
             }
             r12Last = true;
-        } else if (!gamepad2.right_bumper && r12Last) {
+        } else if (!gamepad1.right_bumper && r12Last) {
             r12Last = false;
         }
 
-        if(gamepad2.y && !y2Last){
+        if(gamepad1.a && !y2Last){
             if(flopPos != 2){
                 flopPos ++;
-                if(flopPos == 1 && subFlopLast==2){
+                if(subFlopLast==2){
                     subFlop.setPosition(0.7);
                 }
             }
             y2Last = true;
-        } else if (!gamepad2.y && y2Last) {
+        } else if (!gamepad1.a && y2Last) {
             y2Last = false;
         }
 
-        if(gamepad2.x && !x2Last){
+        if(gamepad1.b && !x2Last){
             if(flopPos != 0){
                 flopPos --;
             }
             x2Last = true;
-        } else if (!gamepad2.x && x2Last) {
+        } else if (!gamepad1.b && x2Last) {
             x2Last = false;
         }
 
@@ -179,12 +187,13 @@ public class teleopM1 extends OpMode {
             mainFlop.setPosition(0);
         }
 
-        //dump dat data muh homies ;)
         telemetry.addData("lift", lift.getCurrentPosition());
         telemetry.addData("flip", flip.getCurrentPosition());
         telemetry.addData("range", String.format("%.01f in", distSensor.getDistance(DistanceUnit.INCH)));
-        telemetry.addData("odometer", encoderWheel.getCurrentPosition()/ticksPerInchTetrix);
-        telemetry.addData("odometer horizontal", encoderWheelHorizontal.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.addData("odometer Y", encoderWheelY.getCurrentPosition());
+        telemetry.addData("odometer X", encoderWheelX.getCurrentPosition());
+        telemetry.addData("inches Y", encoderWheelY.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.addData("inches X", encoderWheelX.getCurrentPosition()/ticksPerInchTetrix);
         telemetry.update();
     }
 
