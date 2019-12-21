@@ -268,7 +268,7 @@ public class RobotBaseM1 implements SensorEventListener {
     }
 
     public void yeetBlock() throws InterruptedException{
-        double angleError, linearError;                                           //The number of degrees between the true heading and desired heading
+        double angleError, linearError;                          //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double leftPower;                                       //Power being fed to left side of bot
         double rightPower;                                      //Power being fed to right side of bot
