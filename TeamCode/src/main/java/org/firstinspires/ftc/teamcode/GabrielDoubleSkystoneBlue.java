@@ -10,11 +10,11 @@ public class GabrielDoubleSkystoneBlue extends LinearOpMode {
         int cameraPos;
 
         RobotBaseGabriel robotBase = new RobotBaseGabriel(this);
-        VisionBaseM1 visionBase = new VisionBaseM1(this);
+        VisionBaseGabriel visionBase = new VisionBaseGabriel(this);
 
         waitForStart();
 
-        /*switch (visionBase.findSkyStone(400, 1280, 350, 420)){
+        /*switch (visionBase.findSkyStone(400, 1280, 350, 420, false)){
             case LEFT:
                 cameraPos = 0;
                 break;

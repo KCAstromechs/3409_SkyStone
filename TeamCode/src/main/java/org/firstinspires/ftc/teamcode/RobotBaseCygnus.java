@@ -17,11 +17,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import static android.content.Context.SENSOR_SERVICE;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
-public class RobotBaseGabriel implements SensorEventListener {
+public class RobotBaseCygnus implements SensorEventListener {
 
-    DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, lift, flip;
+    DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, liftL, liftR;
 
-    Servo foundRight, foundLeft, mainFlop, subFlop, release;
+    Servo grab;
 
     OpMode callingOpMode;
 
@@ -67,9 +67,7 @@ public class RobotBaseGabriel implements SensorEventListener {
     double global_lastForwardPos = 0;
     double global_lastSidewaysPos = 0;
 
-    int pos = 1;
-
-    public RobotBaseGabriel(OpMode _callingOpMode) {
+    public RobotBaseCygnus(OpMode _callingOpMode) {
         callingOpMode = _callingOpMode;
 
         frontRight = callingOpMode.hardwareMap.dcMotor.get("frontRight");
@@ -78,20 +76,14 @@ public class RobotBaseGabriel implements SensorEventListener {
         backLeft = callingOpMode.hardwareMap.dcMotor.get("backLeft");
         encoderWheelY = callingOpMode.hardwareMap.dcMotor.get("encoderWheelY");
         encoderWheelX = callingOpMode.hardwareMap.dcMotor.get("encoderWheelX");
-        lift = callingOpMode.hardwareMap.dcMotor.get("lift");
-        flip = callingOpMode.hardwareMap.dcMotor.get("flip");
+        liftL = callingOpMode.hardwareMap.dcMotor.get("liftL");
+        liftR = callingOpMode.hardwareMap.dcMotor.get("liftR");
 
-        foundLeft  = callingOpMode.hardwareMap.servo.get("foundationLeft");
-        foundRight = callingOpMode.hardwareMap.servo.get("foundationRight");
-        mainFlop   = callingOpMode.hardwareMap.servo.get("mainFlop");
-        subFlop    = callingOpMode.hardwareMap.servo.get("subFlop");
-        release    = callingOpMode.hardwareMap.servo.get("release");
+        grab = callingOpMode.hardwareMap.servo.get("grab");
 
-        distSensor = callingOpMode.hardwareMap.get(DistanceSensor.class, "distSensor");
-
-        frontRight.setDirection(DcMotor.Direction.REVERSE);
-        backRight.setDirection(DcMotor.Direction.REVERSE);
-
+        frontLeft.setDirection(DcMotor.Direction.REVERSE);
+        backLeft.setDirection(DcMotor.Direction.REVERSE);
+        liftR.setDirection(DcMotor.Direction.REVERSE);
 
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -99,8 +91,8 @@ public class RobotBaseGabriel implements SensorEventListener {
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -108,19 +100,13 @@ public class RobotBaseGabriel implements SensorEventListener {
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        release.setPosition(0);
-        foundRight.setPosition(0);
-        foundLeft.setPosition(0.75);
-        mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.35);
 
         mSensorManager = (SensorManager) _callingOpMode.hardwareMap.appContext.getSystemService(SENSOR_SERVICE);
         mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
@@ -210,118 +196,13 @@ public class RobotBaseGabriel implements SensorEventListener {
 
     public int getCurrentBackLeftPosition() {return Math.abs(backLeft.getCurrentPosition()-backLeftBaseEncoder);}
 
-    public int getCurrentAveragePosition() {return Math.abs((getCurrentBackLeftPosition()+getCurrentBackRightPosition()+getCurrentFrontRightPosition())/3);} //frontLeft is MIA
-
     public int getEncoderWheelYPosition() {return encoderWheelY.getCurrentPosition()-encoderWheelYBaseEncoder;}
 
     public int getEncoderWheelXPosition() {return -1*(encoderWheelX.getCurrentPosition()-encoderWheelXBaseEncoder);}
 
-    public double getDistSensorInch() {return distSensor.getDistance(DistanceUnit.INCH);}
+    //public double getDistSensorInch() {return distSensor.getDistance(DistanceUnit.INCH);}
 
-    public double ticksToInches(double x) {
-        return 3 * Math.PI * x/1400; //x/(1400/3*pi)
-    }
-
-    public void driveStraight(double inches, float heading) throws InterruptedException { driveStraight(inches, heading, driveSpeed); }
-
-    public void driveStraight(double inches, float heading, double speedLimit)  throws InterruptedException {
-        double error;                                           //The number of degrees between the true heading and desired heading
-        double correction;                                      //Modifies power to account for error
-        double leftPower;                                       //Power being fed to left side of bot
-        double rightPower;                                      //Power being fed to right side of bot
-        double max;                                             //To be used to keep powers from exceeding 1
-        double P_COEFF = 0.0012;      //0.002
-        double I_COEFF = 0.00192;     //0.0035
-        double D_COEFF = 0.0003;    //0.00042
-        if(inches<24){
-            P_COEFF = 0.0015;
-            I_COEFF = 0.00192;
-            D_COEFF = 0.0003;
-        }
-        double power;
-        double deltaT;
-        double derivative = 0;
-        double integral = 0;
-        int deltaD;
-        int lastEncoder;
-        int distance;
-        long loops = 0;
-        heading = (int) normalize360(heading);
-
-        setEncoderBase();
-        lastEncoder = 0;
-
-        int target = (int) (inches * ticksPerInchTetrix);
-
-        speedLimit = Range.clip(speedLimit, 0.0, 1.0);
-
-        if (speedLimit==0){
-            return;
-        }
-
-        double lastTime = callingOpMode.getRuntime();
-
-        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelYPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelYPosition())))
-                || (loops==0 || Math.abs(derivative)<1)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-
-            error = heading - zRotation;
-
-            distance = Math.abs(target) - Math.abs(getEncoderWheelYPosition());
-
-            while (error > 180) error = (error - 360);
-            while (error <= -180) error = (error + 360);
-
-            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
-
-            deltaT = callingOpMode.getRuntime()-lastTime;
-            lastTime = callingOpMode.getRuntime();
-            deltaD = getEncoderWheelYPosition()-lastEncoder;
-            lastEncoder = getEncoderWheelYPosition();
-
-            derivative = ((double) deltaD)/deltaT;
-
-            if(Math.abs(distance*P_COEFF)<1){
-                integral += distance*deltaT;
-            } else {
-                integral = 0;
-            }
-
-            power = (distance*P_COEFF) + (integral*I_COEFF) - (derivative*D_COEFF);
-
-            if (Math.abs(power) > Math.abs(speedLimit)) {
-                power /= Math.abs(power);
-                power *= Math.abs(speedLimit);
-            }
-
-            leftPower = power - correction;
-            rightPower = power + correction;
-
-            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
-            if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
-            }
-
-            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
-
-            if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getEncoderWheelYPosition());
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.addData("deltaD", deltaD);
-                callingOpMode.telemetry.addData("deltaT", deltaT);
-                callingOpMode.telemetry.addData("distance", distance);
-                callingOpMode.telemetry.addData("derivative", derivative);
-                callingOpMode.telemetry.update();
-            }
-
-            loops++;
-
-            updateGlobalPosition();
-
-            ((LinearOpMode) callingOpMode).sleep(10);
-        }
-    }
+    public double ticksToInches(double x) { return 3 * Math.PI * x/1400; }
 
     public void driveStraight(double deltaY, double deltaX, float heading, double speedLimit)  throws InterruptedException {
         double error;                                           //The number of degrees between the true heading and desired heading
@@ -692,117 +573,6 @@ public class RobotBaseGabriel implements SensorEventListener {
         }
     }
 
-    public void yeetBlock() throws InterruptedException{
-        double angleError, linearError;                                           //The number of degrees between the true heading and desired heading
-        double correction;                                      //Modifies power to account for error
-        double leftPower;                                       //Power being fed to left side of bot
-        double rightPower;                                      //Power being fed to right side of bot
-        double max;                                             //To be used to keep powers from exceeding 1
-        double heading = zRotation;
-        long loops = 0;
-        double deltaTime;
-        double derivativeTimeStamp = System.currentTimeMillis();
-        double derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
-        double coefP =.08;
-        double coefD = -.19;
-        double Dterm = 0;
-        double baseP =.19;
-        double power =baseP;
-        double fastPower = .4;
-        pos4();
-        /*while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-            updateDriveMotors(power, power, power, power);
-            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
-            callingOpMode.telemetry.update();
-            Thread.sleep(5);
-        }*/
-        double distLast = distSensor.getDistance(DistanceUnit.INCH);
-        double timeLast = System.currentTimeMillis();
-        while(distSensor.getDistance(DistanceUnit.INCH) >= 1.6 && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-            angleError = heading - zRotation;
-            while (angleError > 180) angleError = (angleError - 360);
-            while (angleError <= -180) angleError = (angleError + 360);
-
-            correction = Range.clip(angleError * P_DRIVE_COEFF, -1, 1);
-
-            deltaTime = timeLast - System.currentTimeMillis();
-            callingOpMode.telemetry.addData("delta time:", deltaTime);
-            if(System.currentTimeMillis() - derivativeTimeStamp > 50) {
-                Dterm = (derivativeDistStamp - distSensor.getDistance(DistanceUnit.INCH))/(System.currentTimeMillis() - derivativeTimeStamp);
-                derivativeTimeStamp = System.currentTimeMillis();
-                derivativeDistStamp = distSensor.getDistance(DistanceUnit.INCH);
-            }
-            power = distSensor.getDistance(DistanceUnit.INCH) * coefP + Dterm * coefD;
-            callingOpMode.telemetry.addData("DDD:", Dterm + coefD);
-            timeLast = System.currentTimeMillis();
-            leftPower = power - correction;
-            rightPower = power + correction;
-
-            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
-            if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
-            }
-            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
-            callingOpMode.telemetry.addData("dist:", distSensor.getDistance(DistanceUnit.INCH));
-            callingOpMode.telemetry.update();
-            Thread.sleep(5);
-        }
-        stopAndReset();
-        pos5();
-        pos3();
-    }
-
-    public void driveStraightTime(long millis, float heading, double power)  throws InterruptedException {
-        double error;                                           //The number of degrees between the true heading and desired heading
-        double correction;                                      //Modifies power to account for error
-        double leftPower;                                       //Power being fed to left side of bot
-        double rightPower;                                      //Power being fed to right side of bot
-        double max;                                             //To be used to keep powers from exceeding 1
-        long loops = 0;
-        heading = (int) normalize360(heading);
-
-        setEncoderBase();
-
-        power = Range.clip(power, -1.0, 1.0);
-
-        long startTime = System.currentTimeMillis();
-
-
-        while ((System.currentTimeMillis() < (startTime+millis))  && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-
-            error = heading - zRotation;
-
-            while (error > 180) error = (error - 360);
-            while (error <= -180) error = (error + 360);
-
-            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
-
-            leftPower = power - correction;
-            rightPower = power + correction;
-
-            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
-            if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
-            }
-            updateDriveMotors(leftPower, rightPower, leftPower, rightPower);
-
-            if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getCurrentAveragePosition());
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.update();
-            }
-
-            loops++;
-
-            updateGlobalPosition();
-
-            Thread.yield();
-        }
-    }
-
     public void turn(float turnHeading, double power) throws InterruptedException {
         int wrapFix = 0;                                        //Can be used to modify values and make math around 0 easier
         float shiftedTurnHeading = turnHeading;                 //Can be used in conjunction with wrapFix to make math around 0 easier
@@ -889,354 +659,9 @@ public class RobotBaseGabriel implements SensorEventListener {
         }
     }
 
-    public void strafe(double inches, float heading, double speedLimit)  throws InterruptedException {   //positive speedLimit == right; negative speedLimit == left
 
-        double error;                                           //The number of degrees between the true heading and desired heading
-        double correction;                                      //Modifies power to account for error
-        double frontPower;                                       //Power being fed to front side of bot
-        double backPower;                                      //Power being fed to back side of bot
-        double max;                                             //To be used to keep powers from exceeding 1
-        double P_COEFF = 0.0012;      //0.002
-        double I_COEFF = 0.00192;     //0.0035
-        double D_COEFF = 0.0003;    //0.00042
-        if(inches<24){
-            P_COEFF = 0.0015;
-            I_COEFF = 0.00192;
-            D_COEFF = 0.0003;
-        }
-        double power;
-        double deltaT;
-        double derivative = 0;
-        double integral = 0;
-        int deltaD;
-        int lastEncoder;
-        int distance;
-        long loops = 0;
-        heading = (int) normalize360(heading);
+    //lift methods go here
 
-        setEncoderBase();
-        lastEncoder = 0;
-
-        int target = (int) (inches * ticksPerInchTetrix);
-
-        speedLimit = Range.clip(speedLimit, 0.0, 1.0);
-
-        if (speedLimit==0){
-            return;
-        }
-
-        double lastTime = callingOpMode.getRuntime();
-
-        while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelXPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelXPosition())))
-                || (loops==0 || Math.abs(derivative)<1)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-
-            error = heading - zRotation;
-
-            distance = Math.abs(target) - Math.abs(getEncoderWheelXPosition());
-
-            while (error > 180) error = (error - 360);
-            while (error <= -180) error = (error + 360);
-
-            correction = Range.clip(error * P_DRIVE_COEFF, -1, 1);
-
-            deltaT = callingOpMode.getRuntime()-lastTime;
-            lastTime = callingOpMode.getRuntime();
-            deltaD = getEncoderWheelXPosition()-lastEncoder;
-            lastEncoder = getEncoderWheelXPosition();
-
-            derivative = ((double) deltaD)/deltaT;
-
-            if(Math.abs(distance*P_COEFF)<1){
-                integral += distance*deltaT;
-            } else {
-                integral = 0;
-            }
-
-            power = (distance*P_COEFF) + (integral*I_COEFF) - (derivative*D_COEFF);
-
-            if (Math.abs(power) > Math.abs(speedLimit)) {
-                power /= Math.abs(power);
-                power *= Math.abs(speedLimit);
-            }
-
-            frontPower = power + correction;
-            backPower = power - correction;
-
-            max = Math.max(Math.abs(frontPower), Math.abs(backPower));
-            if (max > 1.0) {
-                backPower /= max;
-                frontPower /= max;
-            }
-
-            updateDriveMotors(-frontPower, frontPower, backPower, -backPower);
-
-            if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("gyro" , zRotation);
-                callingOpMode.telemetry.addData("encoder" , getEncoderWheelXPosition());
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.addData("deltaD", deltaD);
-                callingOpMode.telemetry.addData("deltaT", deltaT);
-                callingOpMode.telemetry.addData("distance", distance);
-                callingOpMode.telemetry.addData("derivative", derivative);
-                callingOpMode.telemetry.update();
-            }
-
-            loops++;
-
-            updateGlobalPosition();
-
-            ((LinearOpMode) callingOpMode).sleep(10);
-        }
-    }
-
-    public void arcDrive (double inches, float degreesToTurn, double basePower, boolean clockwise, double p_coeff) throws InterruptedException {
-
-        //degrees to turn  positive for clockwise
-
-        int target = (int) (inches * ticksPerInch);
-        double correction;
-        double leftPower = basePower;
-        double rightPower = basePower;
-        double max;
-        int lastEncoder;
-        int currentEncoder = 0;
-        int deltaEncoder;
-        double proportionEncoder;
-        float lastHeading;
-        float currentHeading = zRotation;
-        float deltaHeading;
-        double proportionHeading;
-        double proportionArc;
-        long loops = 0;
-
-        if(basePower<0){
-            clockwise = !clockwise;
-            degreesToTurn *= -1;
-        }
-
-        double P_ARC_COEFF = p_coeff;
-
-        setEncoderBase();
-
-        frontRight.setPower(basePower);
-        backRight.setPower(basePower);
-        frontLeft.setPower(basePower);
-        backLeft.setPower(basePower);
-
-        Thread.sleep(10);
-
-        while (((LinearOpMode) callingOpMode).opModeIsActive()) {
-
-            lastEncoder = currentEncoder;
-            currentEncoder = getCurrentAveragePosition();
-
-            deltaEncoder = currentEncoder - lastEncoder;
-
-            lastHeading = currentHeading;
-            currentHeading = zRotation;
-
-            deltaHeading = currentHeading - lastHeading;
-            deltaHeading = normalize360two(deltaHeading);
-
-            proportionEncoder = (double) deltaEncoder / target;
-            proportionHeading = (double) deltaHeading / degreesToTurn;
-
-            proportionArc = proportionEncoder - proportionHeading;
-
-            correction = proportionArc * P_ARC_COEFF;
-
-            if(clockwise) {
-                leftPower += correction;
-                rightPower -= correction;
-            } else {
-                leftPower -= correction;
-                rightPower += correction;
-            }
-
-            max = Math.max(Math.abs(leftPower), Math.abs(rightPower));
-            if (max > 1.0) {
-                leftPower /= max;
-                rightPower /= max;
-            }
-            frontRight.setPower(rightPower);
-            backRight.setPower(rightPower);
-            frontLeft.setPower(leftPower);
-            backLeft.setPower(leftPower);
-
-            if (((loops + 10) % 10) == 0) {
-                callingOpMode.telemetry.addData("TARGET", target);
-                callingOpMode.telemetry.addData("gyro", zRotation);
-                callingOpMode.telemetry.addData("encoder", currentEncoder);
-                callingOpMode.telemetry.addData("heading", currentHeading);
-                callingOpMode.telemetry.addData("dEncoder", deltaEncoder);
-                callingOpMode.telemetry.addData("dHeading", deltaHeading);
-                callingOpMode.telemetry.addData("pEncoder", proportionEncoder);
-                callingOpMode.telemetry.addData("pHeading", proportionHeading);
-                callingOpMode.telemetry.addData("arc", proportionArc);
-                callingOpMode.telemetry.addData("correction", correction);
-                callingOpMode.telemetry.addData("leftPower", leftPower);
-                callingOpMode.telemetry.addData("rightPower", rightPower);
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.update();
-            }
-
-            loops++;
-
-            updateGlobalPosition();
-
-            Thread.sleep(10);
-
-            if(Math.abs(target) <= Math.abs(getCurrentAveragePosition())) {
-                callingOpMode.telemetry.addData("TARGET", target);
-                callingOpMode.telemetry.addData("gyro", zRotation);
-                callingOpMode.telemetry.addData("encoder", currentEncoder);
-                callingOpMode.telemetry.addData("heading", currentHeading);
-                callingOpMode.telemetry.addData("dEncoder", deltaEncoder);
-                callingOpMode.telemetry.addData("dHeading", deltaHeading);
-                callingOpMode.telemetry.addData("pEncoder", proportionEncoder);
-                callingOpMode.telemetry.addData("pHeading", proportionHeading);
-                callingOpMode.telemetry.addData("arc", proportionArc);
-                callingOpMode.telemetry.addData("correction", correction);
-                callingOpMode.telemetry.addData("leftPower", leftPower);
-                callingOpMode.telemetry.addData("rightPower", rightPower);
-                callingOpMode.telemetry.addData("loops", loops);
-                callingOpMode.telemetry.update();
-                break;
-            }
-        }
-    }
-
-    public void grabFoundation () throws InterruptedException {
-        foundRight.setPosition(0.75);
-        foundLeft.setPosition(0);
-        Thread.sleep(1100);
-    }
-
-    public void releaseFoundation () throws InterruptedException {
-        foundRight.setPosition(0);
-        foundLeft.setPosition(0.75);
-    }
-
-    public void mainFlopDown () throws InterruptedException {
-        mainFlop.setPosition(0);
-        Thread.sleep(400);
-    }
-
-    public void mainFlopMid () throws InterruptedException {
-        mainFlop.setPosition(0.15);
-        Thread.sleep(400);
-    }
-
-    public void mainFlopUp () throws InterruptedException {
-        mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.35);
-        Thread.sleep(400);
-    }
-
-    public void grabStone () throws InterruptedException {
-        subFlop.setPosition(0.35);
-        Thread.sleep(400);
-    }
-
-    public void releaseStone () throws InterruptedException {
-        subFlop.setPosition(0.7);
-        Thread.sleep(400);
-    }
-
-
-
-    /*
-    *   pos 1 == closed & up
-    *   pos 2 == open & mid
-    *   pos 3 == closed & mid
-    *   pos 4 == open & down
-    *   pos 5 == closed & down
-     */
-
-    public void pos1 () throws InterruptedException {
-        pos = 1;
-        mainFlop.setPosition(0.7);
-        subFlop.setPosition(0.35);
-        Thread.sleep(400);
-    }
-
-    public void pos2 () throws InterruptedException {
-        pos = 2;
-        mainFlop.setPosition(0.15);
-        subFlop.setPosition(0.7);
-        Thread.sleep(400);
-    }
-
-    public void pos3 () throws InterruptedException {
-        pos = 3;
-        mainFlop.setPosition(0.15);
-        subFlop.setPosition(0.30);
-        Thread.sleep(400);
-    }
-
-    public void pos4 () throws InterruptedException {
-        pos = 4;
-        mainFlop.setPosition(0);
-        subFlop.setPosition(0.7);
-        Thread.sleep(400);
-    }
-
-    public void pos5 () throws InterruptedException {
-        pos = 5;
-        mainFlop.setPosition(0);
-        subFlop.setPosition(0.30);
-        Thread.sleep(400);
-    }
-
-    public int getPos () {
-        return pos;
-    }
-
-
-
-    public void lift3F () throws InterruptedException {
-        if (lift.getCurrentPosition() < 1000) {
-            lift.setPower(0.9);
-            while (lift.getCurrentPosition() < 1000) {Thread.sleep(10);}
-        } else if (lift.getCurrentPosition() > 1000) {
-            lift.setPower(-0.9);
-            while (lift.getCurrentPosition() > 1000) {Thread.sleep(10);}
-        }
-        lift.setPower(0);
-    }
-
-    public void lift2F () throws InterruptedException {
-        if (lift.getCurrentPosition() < 500) {
-            lift.setPower(0.9);
-            while (lift.getCurrentPosition() < 500) {Thread.sleep(10);}
-        } else if (lift.getCurrentPosition() > 500) {
-            lift.setPower(-0.9);
-            while (lift.getCurrentPosition() > 500) {Thread.sleep(10);}
-        }
-        lift.setPower(0);
-    }
-
-    public void lift1F () throws InterruptedException {
-        if (lift.getCurrentPosition() < 100) {
-            lift.setPower(0.9);
-            while (lift.getCurrentPosition() < 100) {Thread.sleep(10);}
-        } else if (lift.getCurrentPosition() > 100) {
-            lift.setPower(-0.9);
-            while (lift.getCurrentPosition() > 100) {Thread.sleep(10);}
-        }
-        lift.setPower(0);
-    }
-
-    public void liftReset () throws InterruptedException {
-        if (lift.getCurrentPosition() < 10) {
-            lift.setPower(0.9);
-            while (lift.getCurrentPosition() < 10) {Thread.sleep(10);}
-        } else if (lift.getCurrentPosition() > 10) {
-            lift.setPower(-0.9);
-            while (lift.getCurrentPosition() > 10) {Thread.sleep(10);}
-        }
-        lift.setPower(0);
-    }
 
     protected float normalize360two(float val) {
         while (val > 180f || val < -180f) {

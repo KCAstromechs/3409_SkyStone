@@ -11,8 +11,8 @@ public class spike_driveStraightOdometer extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         RobotBaseGabriel rb = new RobotBaseGabriel(this);
         waitForStart();
-        rb.driveStraight(12, 12, 0,  0.9); //TODO TEST THIS
-        rb.stop();
-        sleep(10000);
+        double straightStartTime = getRuntime();
+        rb.driveTo(0, 0, 180,  0.9);
+        rb.deconstruct();
     }
 }
