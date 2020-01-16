@@ -8,6 +8,7 @@ import android.hardware.SensorManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
@@ -20,8 +21,8 @@ import static android.content.Context.SENSOR_SERVICE;
 public class RobotBaseCygnus implements SensorEventListener {
 
     DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, liftL, liftR;
-
     Servo grab;
+    DistanceSensor distSensor;
 
     OpMode callingOpMode;
 
@@ -33,14 +34,16 @@ public class RobotBaseCygnus implements SensorEventListener {
     double ticksPerInch = ((ticksPerRotation)/(wheelDiameter * Math.PI));
     double ticksPerInchTetrix = ((ticksPerRotationTetrix)/(3 * Math.PI));
 
-    protected static final double P_DRIVE_COEFF = 0.042;
+    protected static final double P_DRIVE_COEFF = 0.021;
+
+    double L_P_COEFF = 0.008;
+    int liftTarget = 0;
 
     static final double driveSpeed = 0.9;
 
     int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelYBaseEncoder, encoderWheelXBaseEncoder, backLeftBaseEncoder = 0;
 
 
-    private DistanceSensor distSensor;
     //variables for gyro operation
     private float zero;
     private float rawGyro;
@@ -83,7 +86,9 @@ public class RobotBaseCygnus implements SensorEventListener {
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
-        liftR.setDirection(DcMotor.Direction.REVERSE);
+        liftL.setDirection(DcMotor.Direction.REVERSE);
+        encoderWheelY.setDirection(DcMotor.Direction.REVERSE);
+        encoderWheelX.setDirection(DcMotor.Direction.REVERSE);
 
         frontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
@@ -114,6 +119,12 @@ public class RobotBaseCygnus implements SensorEventListener {
         hasBeenZeroed = false;
         globalY = 0;
         globalX = 0;
+        grabUp();
+        liftR.setPower(-0.15);
+        liftL.setPower(-0.15);
+        ((LinearOpMode) callingOpMode).sleep(1000);
+        liftR.setPower(0);
+        liftL.setPower(0);
     }
 
     public void updateDriveMotors(double frontleft, double frontright, double backleft, double backright) {
@@ -169,7 +180,7 @@ public class RobotBaseCygnus implements SensorEventListener {
     public void updateGlobalPosition(){
         //global coordinates calculation
         global_posF = encoderWheelY.getCurrentPosition();
-        global_posS = -encoderWheelX.getCurrentPosition();
+        global_posS = encoderWheelX.getCurrentPosition();
 
         global_deltaPosForwards = (global_posF - global_lastForwardPos);
         global_deltaPosSideways = (global_posS - global_lastSidewaysPos);
@@ -188,6 +199,17 @@ public class RobotBaseCygnus implements SensorEventListener {
         globalX += ticksToInches(global_x1 + global_x2);
     }
 
+    public void lifterHandler(){
+        double distanceL = liftTarget-getCurrentLiftPosition();
+        double liftPower = (distanceL * L_P_COEFF);
+        liftL.setPower(liftPower);
+        liftR.setPower(liftPower);
+    }
+
+    public void setLiftTarget(int floor, int modifier){
+        liftTarget = (280*floor)+modifier;
+    }
+
     public int getCurrentFrontRightPosition() {return Math.abs(frontRight.getCurrentPosition()-frontRightBaseEncoder);}
 
     public int getCurrentFrontLeftPosition() {return Math.abs(frontLeft.getCurrentPosition()-frontLeftBaseEncoder);}
@@ -196,9 +218,11 @@ public class RobotBaseCygnus implements SensorEventListener {
 
     public int getCurrentBackLeftPosition() {return Math.abs(backLeft.getCurrentPosition()-backLeftBaseEncoder);}
 
+    public int getCurrentLiftPosition() {return Math.abs((liftL.getCurrentPosition()+liftR.getCurrentPosition())/2);} //280 ticks per floor
+
     public int getEncoderWheelYPosition() {return encoderWheelY.getCurrentPosition()-encoderWheelYBaseEncoder;}
 
-    public int getEncoderWheelXPosition() {return -1*(encoderWheelX.getCurrentPosition()-encoderWheelXBaseEncoder);}
+    public int getEncoderWheelXPosition() {return encoderWheelX.getCurrentPosition()-encoderWheelXBaseEncoder;}
 
     //public double getDistSensorInch() {return distSensor.getDistance(DistanceUnit.INCH);}
 
@@ -349,10 +373,10 @@ public class RobotBaseCygnus implements SensorEventListener {
                 backRight *= Math.abs(speedLimit);
             }
 
-            frontLeft -= correction;
-            frontRight += correction;
-            backLeft -= correction;
-            backRight += correction;
+            frontLeft += correction;
+            frontRight -= correction;
+            backLeft += correction;
+            backRight -= correction;
 
             max = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)), Math.max(Math.abs(backLeft), Math.abs(backRight)));
             if (max > 1.0) {
@@ -382,6 +406,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             loops++;
 
             updateGlobalPosition();
+            lifterHandler();
 
             ((LinearOpMode) callingOpMode).sleep(10);
         }
@@ -399,15 +424,15 @@ public class RobotBaseCygnus implements SensorEventListener {
         float error = heading - zRotation;                      //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double max;
-        double Y_P_COEFF = 0.17825353626292278;      //0.002
-        double Y_I_COEFF = 0.2852056580206765;     //0.0035
-        double Y_D_COEFF = 0.0003;    //0.00042
-        double X_P_COEFF = 0.17825353626292278;      //0.002
-        double X_I_COEFF = 0.2852056580206765;     //0.0035
-        double X_D_COEFF = 0.0003;    //0.00042
-        double T_P_COEFF = 0.0084;
-        double T_I_COEFF = 0.0168;
-        double T_D_COEFF = 0.0028;
+        double Y_P_COEFF = 0.17825353626292278;
+        double Y_I_COEFF = 0.2852056580206765;
+        double Y_D_COEFF = 0.0003;
+        double X_P_COEFF = 0.225;
+        double X_I_COEFF = 0.37869858549483094;
+        double X_D_COEFF = 0.00045;
+        double T_P_COEFF = 0.0168;
+        double T_I_COEFF = 0.0240;
+        double T_D_COEFF = 0.00296;
         double driveY, driveX;
         double distanceY;
         double distanceX;
@@ -423,6 +448,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         int lastEncoderY = 0;
         int lastEncoderX = 0;
         float lastHeading = zRotation;
+        float lastError = error;
 
         speedLimit = Range.clip(speedLimit, 0.0, 1.0);
 
@@ -455,6 +481,7 @@ public class RobotBaseCygnus implements SensorEventListener {
                 (((Math.abs(targetX)-1) > Math.abs(globalX)) || ((Math.abs(targetX)+1) < Math.abs(globalX))))  ||
                 (Math.abs(error)>=5.0f)) &&  ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
+            lastError = error;
             error = heading - zRotation;
 
             while (error > 180) error = (error - 360);
@@ -500,10 +527,10 @@ public class RobotBaseCygnus implements SensorEventListener {
             } else {
                 integralX = 0;
             }
-            if(Math.abs(error*T_P_COEFF)<1 && Math.abs(error)>5){
-                integralT += error*deltaT;
-            } else {
+            if(Math.abs(error*T_P_COEFF)>1 || (Math.abs(error)<5 && Math.abs(lastError)>5)){
                 integralT = 0;
+            } else {
+                integralT += error*deltaT;
             }
 
             power = (distanceY*Y_P_COEFF) + (integralY*Y_I_COEFF) - (derivativeY*Y_D_COEFF);
@@ -534,10 +561,10 @@ public class RobotBaseCygnus implements SensorEventListener {
 
             correction = (error*T_P_COEFF) + (integralT*T_I_COEFF) - (derivativeT*T_D_COEFF);
 
-            frontLeft -= correction;
-            frontRight += correction;
-            backLeft -= correction;
-            backRight += correction;
+            frontLeft += correction;
+            frontRight -= correction;
+            backLeft += correction;
+            backRight -= correction;
 
             max = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)), Math.max(Math.abs(backLeft), Math.abs(backRight)));
             if (max > 1.0) {
@@ -568,18 +595,103 @@ public class RobotBaseCygnus implements SensorEventListener {
             loops++;
 
             updateGlobalPosition();
+            lifterHandler();
 
             ((LinearOpMode) callingOpMode).sleep(10);
         }
     }
 
-    public void turn(float turnHeading, double power) throws InterruptedException {
+    public void turn(float heading, double speedLimit){
+        float error = heading - zRotation;                      //The number of degrees between the true heading and desired heading
+        double correction;                                      //Modifies power to account for error
+        double max;
+        double T_P_COEFF = 0.0168;
+        double T_I_COEFF = 0.0240;
+        double T_D_COEFF = 0.00296;
+        long loops = 0;
+        heading = (int) normalize360(heading);
+
+        double frontLeft;
+        double frontRight;
+        double backLeft;
+        double backRight;
+
+        float lastHeading = zRotation;
+
+        speedLimit = Range.clip(speedLimit, 0.0, 1.0);
+
+        if (speedLimit==0){
+            return;
+        }
+        double deltaT;
+        double derivativeT = 0;
+        double integralT = 0;
+        float deltaDT;
+
+        double lastTime = callingOpMode.getRuntime();
+
+        while ((Math.abs(error)>=5.0f) &&  ((LinearOpMode) callingOpMode).opModeIsActive()) {
+            error = heading - zRotation;
+
+            while (error > 180) error = (error - 360);
+            while (error <= -180) error = (error + 360);
+
+            deltaT = callingOpMode.getRuntime()-lastTime;
+            lastTime = callingOpMode.getRuntime();
+
+            deltaDT = zRotation-lastHeading;
+            lastHeading = zRotation;
+
+            derivativeT = ((double) deltaDT/deltaT);
+
+            if(Math.abs(error*T_P_COEFF)<1){
+                integralT += error*deltaT;
+            } else {
+                integralT = 0;
+            }
+
+            correction = (error*T_P_COEFF) + (integralT*T_I_COEFF) - (derivativeT*T_D_COEFF);
+
+            frontLeft = correction;
+            frontRight = -correction;
+            backLeft = correction;
+            backRight = -correction;
+
+            max = Math.max(Math.max(Math.abs(frontLeft), Math.abs(frontRight)), Math.max(Math.abs(backLeft), Math.abs(backRight)));
+            if (max > 1.0) {
+                frontLeft /= max;
+                frontRight /= max;
+                backLeft /= max;
+                backRight /= max;
+            }
+
+            updateDriveMotors(frontLeft, frontRight, backLeft, backRight);
+
+            if (((loops+10) % 10) ==  0) {
+                callingOpMode.telemetry.addData("zRotation" , zRotation);
+                callingOpMode.telemetry.addData("heading", heading);
+                callingOpMode.telemetry.addData("error", error);
+                callingOpMode.telemetry.addData("correction", correction);
+                callingOpMode.telemetry.addData("loops", loops);
+                callingOpMode.telemetry.update();
+            }
+
+            loops++;
+
+            updateGlobalPosition();
+            lifterHandler();
+
+            ((LinearOpMode) callingOpMode).sleep(10);
+        }
+    }
+
+    /*public void turn(float turnHeading, double speedLimit) throws InterruptedException {
         int wrapFix = 0;                                        //Can be used to modify values and make math around 0 easier
         float shiftedTurnHeading = turnHeading;                 //Can be used in conjunction with wrapFix to make math around 0 easier
         long loops = 0;
 
-        power = Math.abs(power);                                //makes sure the power is positive
-        if (power>1) power = 1;                                 //makes sure the power isn't >1
+        speedLimit = Math.abs(speedLimit);                                //makes sure the speedLimit is positive
+        if (speedLimit>1) speedLimit = 1;                                 //makes sure the speedLimit isn't >1
 
         //If heading is not on correct scale, put it between 0-360
         turnHeading = normalize360(turnHeading);
@@ -602,7 +714,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         //If it would be longer to take the ccwise path, we go *** CLOCKWISE ***
         if(Math.abs(cclockwise) >= Math.abs(clockwise)){
 
-            updateDriveMotors(-power, power, -power, power);
+            updateDriveMotors(-speedLimit, speedLimit, -speedLimit, speedLimit);
 
             //While we're not within our error, and we haven't overshot, and the bot is running
             while(Math.abs(normalize360(zRotation + wrapFix)- shiftedTurnHeading) > error &&
@@ -624,6 +736,9 @@ public class RobotBaseCygnus implements SensorEventListener {
 
                 loops++;
 
+                lifterHandler();
+                updateGlobalPosition();
+
                 //Chill a hot decisecond
                 Thread.sleep(10);
             }
@@ -631,7 +746,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         //If it would take longer to take the cwise path, we go *** COUNTERCLOCKWISE ***
         else if(Math.abs(clockwise) > Math.abs(cclockwise)) {
 
-            updateDriveMotors(power, -power, power, -power);
+            updateDriveMotors(speedLimit, -speedLimit, speedLimit, -speedLimit);
 
             //While we're not within our error, and we haven't overshot, and the bot is running
             while (Math.abs(normalize360(zRotation + wrapFix) - shiftedTurnHeading) > error &&
@@ -653,14 +768,27 @@ public class RobotBaseCygnus implements SensorEventListener {
 
                 loops++;
 
+                lifterHandler();
+                updateGlobalPosition();
+
                 //Hold up a hot decisecond
                 Thread.sleep(10);
             }
         }
+    }*/
+
+
+    public void grabUp(){
+        grab.setPosition(0);
     }
 
+    public void grabOpen() {
+        grab.setPosition(0.5);
+    }
 
-    //lift methods go here
+    public void grabClose() {
+        grab.setPosition(0.76);
+    }
 
 
     protected float normalize360two(float val) {
