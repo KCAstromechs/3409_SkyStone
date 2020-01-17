@@ -28,7 +28,7 @@ public class CygnusBlue extends LinearOpMode {
                 rb.driveTo(-13.5, 25, 0, 1);
                 rb.driveTo(-77, 25, 90, 1);
                 rb.stop();
-                rb.setLiftTarget(1, 0);
+                rb.setLiftTarget(1, 50);
                 rb.driveTo(-77, 25,0, 1);
                 rb.driveTo(-77, 28, 0, 0.75);
                 rb.stop();
@@ -46,7 +46,7 @@ public class CygnusBlue extends LinearOpMode {
                 rb.driveTo(10.5, 25, 0, 1);
                 rb.driveTo(-89, 25, 90, 1);
                 rb.stop();
-                rb.setLiftTarget(1, 0);
+                rb.setLiftTarget(1, 50);
                 rb.driveTo(-89, 25, 0, 1);
                 rb.driveTo(-89, 31, 0, 0.75);
                 rb.stop();
@@ -69,7 +69,7 @@ public class CygnusBlue extends LinearOpMode {
                     rb.lifterHandler();
                 }
                 rb.driveTo(-77, 19.5, 311, 1);
-                rb.driveTo(-77, 19.5, 270, 1);
+                rb.turn(270, 1);
                 rb.driveTo(-80, 19.5, 270, 1);
                 rb.stop();
                 rb.setLiftTarget(1, 0);
@@ -78,6 +78,7 @@ public class CygnusBlue extends LinearOpMode {
                 }
                 rb.setLiftTarget(0, 0);
                 rb.driveTo(-39, 28, 270, 1);
+                rb.stop();
                 break;
             case RIGHT:
                 rb.driveTo(2.5, 18, 8, 1);
@@ -88,15 +89,15 @@ public class CygnusBlue extends LinearOpMode {
                 rb.grabClose();
                 sleep(400);
                 rb.driveTo(2.5, 25, 0, 1);
-                rb.driveTo(-89, 25, 90, 1);
+                rb.driveTo(-77, 25, 90, 1);
                 rb.stop();
                 rb.setLiftTarget(1, 100);
-                rb.driveTo(-89, 25,0, 1);
-                rb.driveTo(-89, 28, 0, 0.75);
+                rb.driveTo(-77, 25,0, 1);
+                rb.driveTo(-77, 28, 0, 0.75);
                 rb.stop();
                 rb.grabOpen();
                 sleep(400);
-                rb.driveTo(-89, 23, 0, 1);
+                rb.driveTo(-77, 23, 0, 1);
                 rb.setLiftTarget(0, 45);
                 rb.driveTo(/*18.5*/17.1, 25, 270, 1);
                 rb.driveTo(17.1, 25, 30, 1);
@@ -109,21 +110,39 @@ public class CygnusBlue extends LinearOpMode {
                 rb.driveTo(18.5, 25, 0, 1);
                 rb.driveTo(-89, 25, 90, 1);
                 rb.stop();
-                rb.setLiftTarget(2, 0);
+                rb.setLiftTarget(1, 50);
                 rb.driveTo(-89, 25, 0, 1);
                 rb.driveTo(-89, 31, 0, 0.75);
                 rb.stop();
                 rb.grabOpen();
                 sleep(400);
-                rb.setLiftTarget(0, 45);
+                /*rb.setLiftTarget(0, 45);
                 rb.driveTo(-89, 25, 0, 1);
                 rb.driveTo(-39, 25, 270, 1);
                 rb.stop();
                 rb.setLiftTarget(0, 0);
                 startTime = getRuntime();
-                while(getRuntime()<startTime+1.7 && opModeIsActive()){
+                while(getRuntime()<startTime+0.7 && opModeIsActive()){
+                    rb.lifterHandler();
+                }*/
+                rb.setLiftTarget(0, 30);
+                startTime = getRuntime();
+                rb.driveTo(-89, 33, 0, 1);
+                rb.stop();
+                while(getRuntime()<startTime+0.7){
                     rb.lifterHandler();
                 }
+                rb.driveTo(-77, 19.5, 311, 1);
+                rb.turn(270, 1);
+                rb.driveTo(-80, 19.5, 270, 1);
+                rb.stop();
+                rb.setLiftTarget(1, 0);
+                while(getRuntime()<startTime+0.7){
+                    rb.lifterHandler();
+                }
+                rb.setLiftTarget(0, 0);
+                rb.driveTo(-39, 28, 270, 1);
+                rb.stop();
                 break;
             default:                /*---------->>  center and unknown  <<----------*/
                 rb.driveTo(-5.5, 18, 343, 1);
@@ -134,15 +153,15 @@ public class CygnusBlue extends LinearOpMode {
                 rb.grabClose();
                 sleep(400);
                 rb.driveTo(-5.5, 25, 0, 1);
-                rb.driveTo(-89, 25, 90, 1);
+                rb.driveTo(-77, 25, 90, 1);
                 rb.stop();
                 rb.setLiftTarget(1, 100);
-                rb.driveTo(-89, 25,0, 1);
-                rb.driveTo(-89, 28, 0, 0.75);
+                rb.driveTo(-77, 25,0, 1);
+                rb.driveTo(-77, 28, 0, 0.75);
                 rb.stop();
                 rb.grabOpen();
                 sleep(400);
-                rb.driveTo(-89, 23, 0, 1);
+                rb.driveTo(-77, 23, 0, 1);
                 rb.setLiftTarget(0, 45);
                 rb.driveTo(18.5, 25, 270, 1);
                 rb.driveTo(18.5, 25, 0, 1);
@@ -154,21 +173,39 @@ public class CygnusBlue extends LinearOpMode {
                 rb.driveTo(18.5, 25, 0, 1);
                 rb.driveTo(-89, 25, 90, 1);
                 rb.stop();
-                rb.setLiftTarget(2, 0);
+                rb.setLiftTarget(1, 50);
                 rb.driveTo(-89, 25, 0, 1);
                 rb.driveTo(-89, 31, 0, 0.75);
                 rb.stop();
                 rb.grabOpen();
                 sleep(400);
-                rb.setLiftTarget(0, 45);
+                /*rb.setLiftTarget(0, 45);
                 rb.driveTo(-89, 25, 0, 1);
                 rb.driveTo(-39, 25, 270, 1);
                 rb.stop();
                 rb.setLiftTarget(0, 0);
                 startTime = getRuntime();
-                while(getRuntime()<startTime+1.7 && opModeIsActive()){
+                while(getRuntime()<startTime+0.7 && opModeIsActive()){
+                    rb.lifterHandler();
+                }*/
+                rb.setLiftTarget(0, 30);
+                startTime = getRuntime();
+                rb.driveTo(-89, 33, 0, 1);
+                rb.stop();
+                while(getRuntime()<startTime+0.7){
                     rb.lifterHandler();
                 }
+                rb.driveTo(-77, 19.5, 311, 1);
+                rb.turn(270, 1);
+                rb.driveTo(-80, 19.5, 270, 1);
+                rb.stop();
+                rb.setLiftTarget(1, 0);
+                while(getRuntime()<startTime+0.7){
+                    rb.lifterHandler();
+                }
+                rb.setLiftTarget(0, 0);
+                rb.driveTo(-39, 28, 270, 1);
+                rb.stop();
                 break;
         }
         rb.deconstruct();
