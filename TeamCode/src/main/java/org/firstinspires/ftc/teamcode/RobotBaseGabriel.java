@@ -217,7 +217,6 @@ public class RobotBaseGabriel implements SensorEventListener {
 
         while ((((Math.abs(target)-50) > Math.abs(getEncoderWheelPosition()) || ((Math.abs(target)+50) < Math.abs(getEncoderWheelPosition())))
                 || (loops==0 || Math.abs(derivative)<80)) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
-
             error = heading - zRotation;
 
             distance = Math.abs(target) - Math.abs(getEncoderWheelPosition());

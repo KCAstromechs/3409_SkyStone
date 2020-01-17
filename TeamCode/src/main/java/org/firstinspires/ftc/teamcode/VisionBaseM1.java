@@ -97,6 +97,7 @@ public class VisionBaseM1 {
                 thisG = px.get(gIDX) & 0xFF;
                 thisB = px.get(bIDX) & 0xFF;
 
+                //color filter looks for "not" yellow
                 if (!(thisR > 180 && thisG > 130 && thisB < 130)) { //B < 100
                     px.put(rIDX, (byte) 0);
                     px.put(gIDX, (byte) 255);
