@@ -9,7 +9,7 @@ public class CygnusBlue extends LinearOpMode {
     public void runOpMode() throws InterruptedException {
         int cameraPos;
 
-        RobotBaseCygnus rb = new RobotBaseCygnus(this);
+        RobotBaseCygnusRevGyro rb = new RobotBaseCygnusRevGyro(this);
         VisionBaseCygnus vb = new VisionBaseCygnus(this);
         telemetry.addData("ready", true);
         telemetry.update();

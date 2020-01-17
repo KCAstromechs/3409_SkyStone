@@ -5,24 +5,27 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import com.qualcomm.hardware.bosch.BNO055IMU;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder;
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference;
 
 import static android.content.Context.SENSOR_SERVICE;
 
 @SuppressWarnings({"WeakerAccess", "FieldCanBeLocal"})
-public class RobotBaseCygnus implements SensorEventListener {
+public class RobotBaseCygnusRevGyro {
 
     DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, liftL, liftR;
     Servo grab;
     DistanceSensor distSensor;
+    BNO055IMU gyro;
 
     OpMode callingOpMode;
 
@@ -43,22 +46,8 @@ public class RobotBaseCygnus implements SensorEventListener {
 
     int frontRightBaseEncoder, frontLeftBaseEncoder, backRightBaseEncoder, encoderWheelYBaseEncoder, encoderWheelXBaseEncoder, backLeftBaseEncoder = 0;
 
-
-    //variables for gyro operation
-    private float zero;
-    private float rawGyro;
-    public int sensorDataCounter = 0;
-
-    //arrays for gyro operation
-    private float[] rotationMatrix = new float[9];
-    private float[] orientation = new float[3];
-    //objects for gyro operation
-    private SensorManager mSensorManager;
-    private Sensor mRotationVectorSensor;
-
-    protected boolean hasBeenZeroed= false;
-
-    float zRotation;
+    float hGyroLast = 0;
+    double hGyroLastTime = 0;
 
     double global_y1, global_y2, global_x1, global_x2;
     double global_theta;
@@ -70,7 +59,7 @@ public class RobotBaseCygnus implements SensorEventListener {
     double global_lastForwardPos = 0;
     double global_lastSidewaysPos = 0;
 
-    public RobotBaseCygnus(OpMode _callingOpMode) {
+    public RobotBaseCygnusRevGyro(OpMode _callingOpMode) {
         callingOpMode = _callingOpMode;
 
         frontRight = callingOpMode.hardwareMap.dcMotor.get("frontRight");
@@ -83,6 +72,8 @@ public class RobotBaseCygnus implements SensorEventListener {
         liftR = callingOpMode.hardwareMap.dcMotor.get("liftR");
 
         grab = callingOpMode.hardwareMap.servo.get("grab");
+
+        gyro = callingOpMode.hardwareMap.get(BNO055IMU.class, "gyro");
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -113,19 +104,10 @@ public class RobotBaseCygnus implements SensorEventListener {
         backLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         backRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        mSensorManager = (SensorManager) _callingOpMode.hardwareMap.appContext.getSystemService(SENSOR_SERVICE);
-        mRotationVectorSensor = mSensorManager.getDefaultSensor(Sensor.TYPE_GAME_ROTATION_VECTOR);
-        if(mRotationVectorSensor==null){
-            System.out.println("nope");
-            callingOpMode.telemetry.addData("nope", "no");
-            callingOpMode.telemetry.update();
-        } else {
-            System.out.println("yep");
-            callingOpMode.telemetry.addData("yep", "yes");
-            callingOpMode.telemetry.update();
-        }
-        mSensorManager.registerListener(this, mRotationVectorSensor, 10000);
-        hasBeenZeroed = false;
+        BNO055IMU.Parameters IMUParameters = new BNO055IMU.Parameters();
+        IMUParameters.mode = BNO055IMU.SensorMode.IMU;
+        IMUParameters.angleUnit = BNO055IMU.AngleUnit.DEGREES;
+        gyro.initialize(IMUParameters);
         globalY = 0;
         globalX = 0;
         grabUp();
@@ -134,6 +116,10 @@ public class RobotBaseCygnus implements SensorEventListener {
         ((LinearOpMode) callingOpMode).sleep(1000);
         liftR.setPower(0);
         liftL.setPower(0);
+
+
+        callingOpMode.telemetry.addData("ready", true);
+        callingOpMode.telemetry.update();
     }
 
     public void updateDriveMotors(double frontleft, double frontright, double backleft, double backright) {
@@ -197,7 +183,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         global_lastForwardPos = global_posF;
         global_lastSidewaysPos = global_posS;
 
-        global_theta = zRotation * Math.PI / 180.0;
+        global_theta = getGyro() * Math.PI / 180.0;
         global_y1 = global_deltaPosForwards * Math.cos(global_theta);
         global_y2 = -global_deltaPosSideways * Math.sin(global_theta);
         global_x1 = global_deltaPosForwards * Math.sin(global_theta);
@@ -296,7 +282,7 @@ public class RobotBaseCygnus implements SensorEventListener {
                 (((Math.abs(deltaX)-0.5) > Math.abs(local_globalX)) || ((Math.abs(deltaX)+0.5) < Math.abs(local_globalX)))) &&
                 ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
-            error = heading - zRotation;
+            error = heading - getGyro();
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
@@ -313,7 +299,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             lastForwardPos = posF;
             lastSidewaysPos = posS;
 
-            theta = zRotation * Math.PI / 180.0;
+            theta = getGyro() * Math.PI / 180.0;
             y1 = deltaPosForwards * Math.cos(theta);
             y2 = -deltaPosSideways * Math.sin(theta);
             x1 = deltaPosForwards * Math.sin(theta);
@@ -398,7 +384,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             updateDriveMotors(frontLeft, frontRight, backLeft, backRight);
 
             if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("zRotation" , zRotation);
+                callingOpMode.telemetry.addData("getGyro()" , getGyro());
                 callingOpMode.telemetry.addData("globalY" , local_globalY);
                 callingOpMode.telemetry.addData("globalX" , local_globalX);
                 callingOpMode.telemetry.addData("distanceY", distanceY);
@@ -430,7 +416,7 @@ public class RobotBaseCygnus implements SensorEventListener {
      * @throws InterruptedException
      */
     public void driveTo(double targetX, double targetY, float heading, double speedLimit)  throws InterruptedException {
-        float error = heading - zRotation;                      //The number of degrees between the true heading and desired heading
+        float error = heading - getGyro();                      //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double max;
         double Y_P_COEFF = 0.17825353626292278;
@@ -456,7 +442,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         setEncoderBase();
         int lastEncoderY = 0;
         int lastEncoderX = 0;
-        float lastHeading = zRotation;
+        float lastHeading = getGyro();
         float lastError = error;
 
         speedLimit = Range.clip(speedLimit, 0.0, 1.0);
@@ -491,7 +477,7 @@ public class RobotBaseCygnus implements SensorEventListener {
                 (Math.abs(error)>=5.0f)) &&  ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
             lastError = error;
-            error = heading - zRotation;
+            error = heading - getGyro();
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
@@ -499,7 +485,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             local_globalX = globalX;
             local_globalY = globalY;
 
-            theta = zRotation * Math.PI / 180.0;
+            theta = getGyro() * Math.PI / 180.0;
 
             // these represent the current x and y translations still to do, in global coordinates ... in inches
             driveY = targetY - local_globalY;
@@ -519,8 +505,8 @@ public class RobotBaseCygnus implements SensorEventListener {
             lastEncoderY = getEncoderWheelYPosition();
             deltaDX = getEncoderWheelXPosition()-lastEncoderX;
             lastEncoderX = getEncoderWheelXPosition();
-            deltaDT = zRotation-lastHeading;
-            lastHeading = zRotation;
+            deltaDT = getGyro()-lastHeading;
+            lastHeading = getGyro();
 
             derivativeY = ((double) deltaDY)/deltaT;
             derivativeX = ((double) deltaDX)/deltaT;
@@ -586,7 +572,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             updateDriveMotors(frontLeft, frontRight, backLeft, backRight);
 
             if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("zRotation" , zRotation);
+                callingOpMode.telemetry.addData("getGyro()" , getGyro());
                 callingOpMode.telemetry.addData("globalY" , local_globalY);
                 callingOpMode.telemetry.addData("globalX" , local_globalX);
                 callingOpMode.telemetry.addData("distanceY", distanceY);
@@ -611,7 +597,7 @@ public class RobotBaseCygnus implements SensorEventListener {
     }
 
     public void turn(float heading, double speedLimit){
-        float error = heading - zRotation;                      //The number of degrees between the true heading and desired heading
+        float error = heading - getGyro();                      //The number of degrees between the true heading and desired heading
         double correction;                                      //Modifies power to account for error
         double max;
         double T_P_COEFF = 0.0168;
@@ -625,7 +611,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         double backLeft;
         double backRight;
 
-        float lastHeading = zRotation;
+        float lastHeading = getGyro();
 
         speedLimit = Range.clip(speedLimit, 0.0, 1.0);
 
@@ -640,7 +626,7 @@ public class RobotBaseCygnus implements SensorEventListener {
         double lastTime = callingOpMode.getRuntime();
 
         while ((Math.abs(error)>=5.0f) &&  ((LinearOpMode) callingOpMode).opModeIsActive()) {
-            error = heading - zRotation;
+            error = heading - getGyro();
 
             while (error > 180) error = (error - 360);
             while (error <= -180) error = (error + 360);
@@ -648,8 +634,8 @@ public class RobotBaseCygnus implements SensorEventListener {
             deltaT = callingOpMode.getRuntime()-lastTime;
             lastTime = callingOpMode.getRuntime();
 
-            deltaDT = zRotation-lastHeading;
-            lastHeading = zRotation;
+            deltaDT = getGyro()-lastHeading;
+            lastHeading = getGyro();
 
             derivativeT = ((double) deltaDT/deltaT);
 
@@ -677,7 +663,7 @@ public class RobotBaseCygnus implements SensorEventListener {
             updateDriveMotors(frontLeft, frontRight, backLeft, backRight);
 
             if (((loops+10) % 10) ==  0) {
-                callingOpMode.telemetry.addData("zRotation" , zRotation);
+                callingOpMode.telemetry.addData("getGyro()" , getGyro());
                 callingOpMode.telemetry.addData("heading", heading);
                 callingOpMode.telemetry.addData("error", error);
                 callingOpMode.telemetry.addData("correction", correction);
@@ -706,8 +692,8 @@ public class RobotBaseCygnus implements SensorEventListener {
         turnHeading = normalize360(turnHeading);
 
         //Figure out how far the robot would have to turn in counterclockwise & clockwise directions
-        float cclockwise = zRotation - turnHeading;
-        float clockwise = turnHeading - zRotation;
+        float cclockwise = getGyro() - turnHeading;
+        float clockwise = turnHeading - getGyro();
 
         //Normalize cwise & ccwise values to between 0=360
         clockwise = normalize360(clockwise);
@@ -726,19 +712,19 @@ public class RobotBaseCygnus implements SensorEventListener {
             updateDriveMotors(-speedLimit, speedLimit, -speedLimit, speedLimit);
 
             //While we're not within our error, and we haven't overshot, and the bot is running
-            while(Math.abs(normalize360(zRotation + wrapFix)- shiftedTurnHeading) > error &&
+            while(Math.abs(normalize360(getGyro() + wrapFix)- shiftedTurnHeading) > error &&
                     Math.abs(cclockwise) >= Math.abs(clockwise) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
                 //Figure out how far the robot would have to turn in counterclockwise & clockwise directions
-                cclockwise = zRotation - turnHeading;
-                clockwise = turnHeading - zRotation;
+                cclockwise = getGyro() - turnHeading;
+                clockwise = turnHeading - getGyro();
 
                 //Normalize cwise & ccwise values to between 0=360
                 clockwise = normalize360(clockwise);
                 cclockwise = normalize360(cclockwise);
 
                 if ((loops % 10) ==  0) {
-                    callingOpMode.telemetry.addData("gyro" , zRotation);
+                    callingOpMode.telemetry.addData("gyro" , getGyro());
                     callingOpMode.telemetry.addData("loops", loops);
                     callingOpMode.telemetry.update();
                 }
@@ -758,19 +744,19 @@ public class RobotBaseCygnus implements SensorEventListener {
             updateDriveMotors(speedLimit, -speedLimit, speedLimit, -speedLimit);
 
             //While we're not within our error, and we haven't overshot, and the bot is running
-            while (Math.abs(normalize360(zRotation + wrapFix) - shiftedTurnHeading) > error &&
+            while (Math.abs(normalize360(getGyro() + wrapFix) - shiftedTurnHeading) > error &&
                     Math.abs(clockwise) > Math.abs(cclockwise) && ((LinearOpMode) callingOpMode).opModeIsActive()) {
 
                 //Figure out how far the robot would have to turn in counterclockwise & clockwise directions
-                cclockwise = zRotation - turnHeading;
-                clockwise = turnHeading - zRotation;
+                cclockwise = getGyro() - turnHeading;
+                clockwise = turnHeading - getGyro();
 
                 //Normalize cwise & ccwise values to between 0=360
                 clockwise = normalize360(clockwise);
                 cclockwise = normalize360(cclockwise);
 
                 if ((loops % 10) ==  0) {
-                    callingOpMode.telemetry.addData("gyro" , zRotation);
+                    callingOpMode.telemetry.addData("gyro" , getGyro());
                     callingOpMode.telemetry.addData("loops", loops);
                     callingOpMode.telemetry.update();
                 }
@@ -814,29 +800,6 @@ public class RobotBaseCygnus implements SensorEventListener {
         return val;
     }
 
-    @Override
-    public void onSensorChanged(SensorEvent event) {
-        SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values);
-        SensorManager.getOrientation(rotationMatrix, orientation);
-
-        sensorDataCounter++;
-
-        rawGyro = (float) Math.toDegrees(orientation[0]);
-
-        //If the zero hasn't been zeroed do the zero
-        if (!hasBeenZeroed) {
-            hasBeenZeroed = true;
-            zero = rawGyro;
-        }
-        //Normalize zRotation to be used
-        zRotation = normalize360(rawGyro - zero);
-    }
-
-    @Override
-    public void onAccuracyChanged(Sensor sensor, int i) {
-
-    }
-
     protected float normalize360(float val) {
         while (val > 360 || val < 0) {
 
@@ -851,7 +814,20 @@ public class RobotBaseCygnus implements SensorEventListener {
         return val;
     }
 
-    public void deconstruct(){
-        mSensorManager.unregisterListener(this);
+    float getGyro(){
+        double time = callingOpMode.getRuntime();
+        if(time<hGyroLastTime+0.04){
+            return hGyroLast;
+        }
+        float h = gyro.getAngularOrientation(AxesReference.INTRINSIC, AxesOrder.XYZ, AngleUnit.DEGREES).thirdAngle;
+        h *= -1;
+        if (h < 0){
+            h+= 360;
+        }
+        hGyroLast = h;
+        hGyroLastTime = time;
+        return h;
     }
+
+    public void deconstruct(){ }
 }
