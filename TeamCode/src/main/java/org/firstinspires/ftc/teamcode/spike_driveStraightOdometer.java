@@ -9,12 +9,14 @@ import static java.lang.Thread.yield;
 public class spike_driveStraightOdometer extends LinearOpMode {
     @Override
     public void runOpMode() throws InterruptedException {
-        RobotBaseM1 rb = new RobotBaseM1(this);
+        RobotBaseCygnus rb = new RobotBaseCygnus(this);
+        VisionBaseCygnus vb = new VisionBaseCygnus(this);
         waitForStart();
-        rb.driveStraightOdometerSpike(70, 0, 0.9);
-        rb.stop();
-        telemetry.addData("e", rb.getEncoderWheelPosition());
+        vb.findSkyStone(1, 2, 3, 4, true);
+        telemetry.addData("position", vb.findSkyStone(430, 1170, 330, 470, true));
         telemetry.update();
-        sleep(10000);
+        rb.stop();
+        while(opModeIsActive());
+        rb.deconstruct();
     }
 }

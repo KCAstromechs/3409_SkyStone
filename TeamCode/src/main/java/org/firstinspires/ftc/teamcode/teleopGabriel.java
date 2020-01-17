@@ -1,22 +1,19 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DistanceSensor;
-import com.qualcomm.robotcore.hardware.OpticalDistanceSensor;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
-@Disabled
-@TeleOp(name="teleop m1")
-public class teleopM1 extends OpMode {
+@TeleOp(name="teleop gabe")
+public class teleopGabriel extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
-    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheel, encoderWheelHorizontal, lift, flip;
+    private DcMotor frontRight, frontLeft, backRight, backLeft, encoderWheelY, encoderWheelX, lift, flip;
     private Servo foundRight, foundLeft, mainFlop, subFlop, release;
     private DistanceSensor distSensor;
     private int turbo = 3;
@@ -33,8 +30,8 @@ public class teleopM1 extends OpMode {
         frontLeft = hardwareMap.dcMotor.get("frontLeft");
         backRight = hardwareMap.dcMotor.get("backRight");
         backLeft = hardwareMap.dcMotor.get("backLeft");
-        encoderWheel = hardwareMap.dcMotor.get("encoderWheel");
-        encoderWheelHorizontal = hardwareMap.dcMotor.get("encoderWheelHorizontal");
+        encoderWheelY = hardwareMap.dcMotor.get("encoderWheelY");
+        encoderWheelX = hardwareMap.dcMotor.get("encoderWheelX");
         lift = hardwareMap.dcMotor.get("lift");
         flip = hardwareMap.dcMotor.get("flip");
 
@@ -53,8 +50,8 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         lift.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         flip.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -62,8 +59,8 @@ public class teleopM1 extends OpMode {
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        encoderWheelHorizontal.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         lift.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         flip.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
@@ -183,8 +180,10 @@ public class teleopM1 extends OpMode {
         telemetry.addData("lift", lift.getCurrentPosition());
         telemetry.addData("flip", flip.getCurrentPosition());
         telemetry.addData("range", String.format("%.01f in", distSensor.getDistance(DistanceUnit.INCH)));
-        telemetry.addData("odometer", encoderWheel.getCurrentPosition()/ticksPerInchTetrix);
-        telemetry.addData("odometer horizontal", encoderWheelHorizontal.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.addData("odometer Y", encoderWheelY.getCurrentPosition());
+        telemetry.addData("odometer X", encoderWheelX.getCurrentPosition());
+        telemetry.addData("inches Y", encoderWheelY.getCurrentPosition()/ticksPerInchTetrix);
+        telemetry.addData("inches X", encoderWheelX.getCurrentPosition()/ticksPerInchTetrix);
         telemetry.update();
     }
 

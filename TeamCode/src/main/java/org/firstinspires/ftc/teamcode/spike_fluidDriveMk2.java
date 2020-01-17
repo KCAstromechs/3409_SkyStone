@@ -6,11 +6,13 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import static android.content.Context.SENSOR_SERVICE;
 
+@Disabled
 @Autonomous(name="spike_fluidDriveMk2")
 public class spike_fluidDriveMk2 extends LinearOpMode implements SensorEventListener {
 
