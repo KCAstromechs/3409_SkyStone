@@ -189,7 +189,6 @@ public class spike_GlobalCoordinatesTeleOp extends OpMode implements SensorEvent
 
     }
 
-
     protected float normalize360(float val) {
         while (val > 360 || val < 0) {
 
