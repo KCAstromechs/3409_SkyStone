@@ -5,12 +5,14 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import static android.content.Context.SENSOR_SERVICE;
 
+@Disabled
 @TeleOp(name="spike_GlobalCoordinatesTeleOp")
 public class spike_GlobalCoordinatesTeleOp extends OpMode implements SensorEventListener {
     //init vars

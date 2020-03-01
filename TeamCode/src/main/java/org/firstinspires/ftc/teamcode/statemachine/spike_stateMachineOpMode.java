@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode.statemachine;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+@Disabled
 @Autonomous (name="State machine test")
 public class spike_stateMachineOpMode extends OpMode {
 

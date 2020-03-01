@@ -11,13 +11,13 @@ import com.qualcomm.robotcore.util.Range;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @SuppressWarnings("WeakerAccess")
-@TeleOp(name="teleopCygnus")
+@TeleOp(name="teleopCygnus", group="Cygnus")
 public class teleopCygnus extends OpMode {
 
     //init vars
     private float left, right, leftT, rightT, frontLeftPower, backLeftPower, frontRightPower, backRightPower;
     private DcMotor frontRight, frontLeft, backRight, backLeft, liftL, liftR, encoderWheelY, encoderWheelX;
-    private Servo grab;
+    private Servo grab, cloyer;
     private DistanceSensor distSensor;
 
     boolean dpu2, dpd2 = false;
@@ -36,6 +36,7 @@ public class teleopCygnus extends OpMode {
     double L_I_COEFF = 0.07;
     double L_D_COEFF = 0.0004;
     double turboL;
+    double liftTimer = 0;
 
 
     double ticksPerInchTetrix = ((1400)/(3 * Math.PI));
@@ -53,6 +54,7 @@ public class teleopCygnus extends OpMode {
         liftR = hardwareMap.dcMotor.get("liftR");
 
         grab = hardwareMap.servo.get("grab");
+        cloyer = hardwareMap.servo.get("cloyer");
 
         frontLeft.setDirection(DcMotor.Direction.REVERSE);
         backLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -66,8 +68,6 @@ public class teleopCygnus extends OpMode {
         backRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderWheelY.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         encoderWheelX.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        liftL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        liftR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         frontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         frontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
@@ -75,8 +75,6 @@ public class teleopCygnus extends OpMode {
         backRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         encoderWheelY.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         encoderWheelX.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        liftL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        liftR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         frontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         frontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -85,7 +83,14 @@ public class teleopCygnus extends OpMode {
         liftL.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         liftR.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+        liftL.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        liftR.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        liftL.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        liftR.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+
         grab.setPosition(0.5);
+        cloyer.setPosition(0);
     }
 
     @Override
@@ -109,10 +114,9 @@ public class teleopCygnus extends OpMode {
         backLeft.setPower(backLeftPower);
 
         turboL = 1;
-        if(gamepad2.left_bumper||gamepad2.right_bumper) turboL++;
 
-        if(Math.abs(gamepad2.left_stick_y)<0.03) {
-            liftPos = getCurrentLiftPosition();
+        liftPos = getCurrentLiftPosition();
+        if(!(gamepad2.left_stick_y<-0.03)) {
 
             if (gamepad2.dpad_up && !dpu2) {
                 if((liftTarget%280)<(280/4)){
@@ -131,26 +135,38 @@ public class teleopCygnus extends OpMode {
                 dpd2 = false;
             }
 
-            if(liftTarget<=0 || gamepad2.x){
+            if(gamepad2.x){
                 liftTarget = 0;
-            } else if(liftTarget>2500){
-                liftTarget=2500;
+                liftTimer = getRuntime()+1;
+            }
+            if(liftTarget>3500){
+                liftTarget=3500;
             }
 
             distanceL = liftTarget-liftPos;
 
-            if(liftPos<280&&liftTarget<280){
-                //liftPower=0;
-                liftPower = (distanceL * L_P_COEFF);
+            if(gamepad2.left_stick_y>0.03){
+                liftTarget-=(gamepad2.left_stick_y*20);
+            }
+
+            if(liftTarget!=0){
+                liftTimer = 0;
+            }
+
+            if(getRuntime()>liftTimer&&liftTimer!=0){
+                liftPower=0;
             } else {
                 liftPower = (distanceL * L_P_COEFF);
             }
         } else {
             liftPower = -(gamepad2.left_stick_y/turboL);
+            //if(gamepad2.left_stick_y>0)liftPower/=1000;
             liftTarget = getCurrentLiftPosition();
             dpu2 = false;
             dpd2 = false;
         }
+        //if(liftPower<-0.6) liftPower = -0.6;
+        //if(liftPower<-0.6) liftPower = -0.6;
         liftL.setPower(liftPower);
         liftR.setPower(liftPower);
 
@@ -160,6 +176,12 @@ public class teleopCygnus extends OpMode {
             grab.setPosition(0);
         } else if (gamepad2.b){
             grab.setPosition(0.5);
+        }
+
+        if(gamepad2.right_bumper){
+            cloyer.setPosition(1);
+        } else if (gamepad2.left_bumper){
+            cloyer.setPosition(0);
         }
 
         telemetry.addData("liftL", liftL.getCurrentPosition());
@@ -184,7 +206,7 @@ public class teleopCygnus extends OpMode {
         }
     }
 
-    private int getCurrentLiftPosition() {return Math.abs((liftL.getCurrentPosition()+liftR.getCurrentPosition())/2);} //280 ticks per floor
+    public int getCurrentLiftPosition() {return liftL.getCurrentPosition();} //280 ticks per floor
 
     @Override
     public void stop() {}

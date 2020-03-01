@@ -33,7 +33,7 @@ public class CommandHandler {
         commandList.add(c);
     }
     public void addParallel(LinkedList<Command> cl) {
-        commandList.add(new ParallelCommand(cl));
+        //commandList.add(new ParallelCommand(cl));
     }
 
 }
